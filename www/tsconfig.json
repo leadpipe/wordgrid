@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2018",
+    "module": "ES2020",
+    "lib": ["ES2018", "DOM", "WebWorker"],
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "strict": true,
+    "baseUrl": "./",
+    "outDir": "./dist",
+    "forceConsistentCasingInFileNames": true,
+    "experimentalDecorators": true,
+    "noImplicitOverride": true,
+    "sourceMap": true,
+    "useDefineForClassFields": false
+  },
+  "include": [
+    "./src",
+    "node_modules/lit-scss-loader/types.d.ts"
+  ]
+}

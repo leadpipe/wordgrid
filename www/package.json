@@ -1,0 +1,58 @@
+{
+  "name": "leadpipe-wordgrid",
+  "version": "0.9.0",
+  "description": "A word-finding game.",
+  "type": "commonjs",
+  "scripts": {
+    "build": "webpack --mode=production",
+    "start": "http-server dist",
+    "dev": "webpack-dev-server --mode=development"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leadpipe/wordgrid.git"
+  },
+  "keywords": [
+    "boggle",
+    "wordzup"
+  ],
+  "author": "Luke Blanshard <luke.blanshard@gmail.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/leadpipe/wordgrid/issues"
+  },
+  "homepage": "https://github.com/leadpipe/wordgrid",
+  "dependencies": {
+    "@fontsource/material-icons": "^4.5.4",
+    "@fontsource/merriweather-sans": "^4.5.8",
+    "@fontsource/prompt": "^4.5.8",
+    "idb": "^7.0.2",
+    "lit": "^2.2.8",
+    "mini-html-webpack-plugin": "^3.1.3",
+    "node-http-server": "^8.1.5",
+    "webpack-font-preload-plugin": "^1.5.0",
+    "wordgrid-rust": "../crate/pkg"
+  },
+  "devDependencies": {
+    "@open-wc/webpack-import-meta-loader": "^0.4.7",
+    "@wasm-tool/wasm-pack-plugin": "^1.6.0",
+    "clean-webpack-plugin": "^4.0.0",
+    "copy-webpack-plugin": "^11.0.0",
+    "css-loader": "^6.7.1",
+    "file-loader": "^6.2.0",
+    "fork-ts-checker-webpack-plugin": "^7.2.13",
+    "html-webpack-plugin": "^5.5.0",
+    "http-server": "^14.1.1",
+    "lit-css-loader": "^2.0.0",
+    "sass": "^1.54.0",
+    "sass-loader": "^13.0.2",
+    "style-loader": "^3.3.1",
+    "ts-loader": "^9.3.1",
+    "typescript": "^4.7.4",
+    "wasm-pack": "^0.10.3",
+    "webpack": "^5.74.0",
+    "webpack-cli": "^4.10.0",
+    "webpack-dev-server": "^4.9.3",
+    "workbox-webpack-plugin": "^6.5.4"
+  }
+}
