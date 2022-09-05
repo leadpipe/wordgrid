@@ -49,7 +49,7 @@ it.
   | 6              | 3   |
   | 7              | 5   |
   | 8              | 11  |
-  | 9 or more ($n$)| $2n$|
+  | 9 or more $(n)$| $2n$|
 
 You earn points by recording words before the timer expires. You may continue to
 find words after the timer expires, but won't be awarded any more points.
