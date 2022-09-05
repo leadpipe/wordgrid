@@ -43,13 +43,13 @@ Each word is worth a set number of points depending on the number of letters in
 it.
 
   | Length of word | Number of points |
-  | ---            | --- |
-  | 3 or 4         | 1   |
-  | 5              | 2   |
-  | 6              | 3   |
-  | 7              | 5   |
-  | 8              | 11  |
-  | 9 or more $(n)$| $2n$|
+  | :---:          | :---: |
+  | 3 or 4         | 1     |
+  | 5              | 2     |
+  | 6              | 3     |
+  | 7              | 5     |
+  | 8              | 11    |
+  | 9 or more $(n)$| $2n$  |
 
 You earn points by recording words before the timer expires. You may continue to
 find words after the timer expires, but won't be awarded any more points.
