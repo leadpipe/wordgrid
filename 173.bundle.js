@@ -24,7 +24,7 @@
     .material-icons.large {
       font-size: 48px;
     }
-  `,r([(0,n.Cb)()],a.prototype,"name",void 0),r([(0,n.Cb)()],a.prototype,"size",void 0),a=r([(0,n.Mo)("mat-icon")],a);const d=new s;let l="light",c="default";{const e=window.localStorage.getItem("preferredTheme");switch(e){case"dark":case"light":c=e}}function h(){return"default"===c?l:c}function u(e){if(e!==c){const t=h();c=e,window.localStorage.setItem("preferredTheme",e),p(t)}}function p(e){const t=h();t!==e&&d.dispatchEvent(new CustomEvent("current-theme",{detail:t}))}const m=window.matchMedia("(prefers-color-scheme: dark)");function g(e){const t=h();l=e.matches?"dark":"light",p(t)}g(m),m.addEventListener("change",g);let f=!0;function v(){return f}function w(e){f=e,window.localStorage.setItem("showTimer",String(e)),d.dispatchEvent(new CustomEvent("show-timer",{detail:e}))}"false"===window.localStorage.getItem("showTimer")&&(f=!1);var y=function(e,t,i,s){var o,n=arguments.length,r=n<3?t:null===s?s=Object.getOwnPropertyDescriptor(t,i):s;if("object"==typeof Reflect&&"function"==typeof Reflect.decorate)r=Reflect.decorate(e,t,i,s);else for(var a=e.length-1;a>=0;a--)(o=e[a])&&(r=(n<3?o(r):n>3?o(t,i,r):o(t,i))||r);return n>3&&r&&Object.defineProperty(t,i,r),r};let b=class extends o.oi{constructor(){super(...arguments),this.gameState=null,this.timerRunning=!1}render(){const{gameState:e}=this;return e?v()?o.dy`
+  `,r([(0,n.Cb)()],a.prototype,"name",void 0),r([(0,n.Cb)()],a.prototype,"size",void 0),a=r([(0,n.Mo)("mat-icon")],a);const d=new s;let l="light",c="auto";{const e=window.localStorage.getItem("preferredTheme");switch(e){case"dark":case"light":c=e}}function h(){return"auto"===c?l:c}function u(e){if(e!==c){const t=h();c=e,window.localStorage.setItem("preferredTheme",e),p(t)}}function p(e){const t=h();t!==e&&d.dispatchEvent(new CustomEvent("current-theme",{detail:t}))}const m=window.matchMedia("(prefers-color-scheme: dark)");function g(e){const t=h();l=e.matches?"dark":"light",p(t)}g(m),m.addEventListener("change",g);let f=!0;function v(){return f}function w(e){f=e,window.localStorage.setItem("showTimer",String(e)),d.dispatchEvent(new CustomEvent("show-timer",{detail:e}))}"false"===window.localStorage.getItem("showTimer")&&(f=!1);var y=function(e,t,i,s){var o,n=arguments.length,r=n<3?t:null===s?s=Object.getOwnPropertyDescriptor(t,i):s;if("object"==typeof Reflect&&"function"==typeof Reflect.decorate)r=Reflect.decorate(e,t,i,s);else for(var a=e.length-1;a>=0;a--)(o=e[a])&&(r=(n<3?o(r):n>3?o(t,i,r):o(t,i))||r);return n>3&&r&&Object.defineProperty(t,i,r),r};let b=class extends o.oi{constructor(){super(...arguments),this.gameState=null,this.timerRunning=!1}render(){const{gameState:e}=this;return e?v()?o.dy`
       ${this.remainingTime()}<br />
       <a @click=${this.hideTimer} title="Hide timer">
         <mat-icon name="visibility_off"></mat-icon>
@@ -128,7 +128,7 @@
     .more {
       font-size: 80%;
     }
-  `,de([(0,n.Cb)()],le.prototype,"word",void 0),de([(0,n.Cb)()],le.prototype,"category",void 0),de([(0,n.Cb)()],le.prototype,"theme",void 0),de([(0,n.SB)()],le.prototype,"open",void 0),le=de([(0,n.Mo)("solution-word")],le);var ce=i(36);const he=new SharedWorker(new URL(i.p+i.u(975),i.b),{name:"words"});he.port.start(),he.onerror=e=>{console.log("Error on the words worker:",e)};const ue=[];function pe(e){return new Promise(((t,i)=>{ue.push({message:e.toMakeGridMessage(),resolve:t,reject:i}),1===ue.length&&me()}))}function me(){ue.length&&he.port.postMessage(ue[0].message)}he.port.onmessage=e=>{if(!ue.length)return void console.log("Unexpected message from the words worker");const t=ue.shift();if(me(),e.data.message.seed===(null==t?void 0:t.message.seed))switch(e.data.type){case Q.GRID:t.resolve(e.data);break;case Q.UNKNOWN_VERSION:t.reject(`The words worker can't honor the version we asked for, ${e.data.message.version}`)}else console.log(`Expected to hear about ${null==t?void 0:t.message.seed}, instead got`,e.data)};let ge=Date.now();function fe(){ge=Date.now()}var ve=function(e,t,i,s){var o,n=arguments.length,r=n<3?t:null===s?s=Object.getOwnPropertyDescriptor(t,i):s;if("object"==typeof Reflect&&"function"==typeof Reflect.decorate)r=Reflect.decorate(e,t,i,s);else for(var a=e.length-1;a>=0;a--)(o=e[a])&&(r=(n<3?o(r):n>3?o(t,i,r):o(t,i))||r);return n>3&&r&&Object.defineProperty(t,i,r),r};let we=!0,ye=class extends o.oi{constructor(){super(...arguments),this.theme="light",this.puzzleId=ee.daily(),this.resumeImmediately=!1,this.puzzle=null,this.gameState=null,this.categoriesExpanded=!1,this.db=oe(),this.foregroundnessHandler=()=>{"visible"!==document.visibilityState&&this.pausePlay()},this.windowBlurHandler=()=>{this.pausePlay()},this.spacebarHandler=e=>{var t;" "===e.key&&((null===(t=this.gameState)||void 0===t?void 0:t.isPaused)?this.resumePlay():this.pausePlay())},this.showTimerHandler=()=>{this.requestUpdate()},this.pendingWords=[],this.pendingWordsJudgements=[],this.pendingWordsTimeoutId=0}render(){var e,t,i,s;const{theme:n,gameState:r}=this,a=n===l?"light"===n?"dark":"light":"default",d=null!==(e=null==r?void 0:r.getWordCategories())&&void 0!==e?e:[];return o.dy`
+  `,de([(0,n.Cb)()],le.prototype,"word",void 0),de([(0,n.Cb)()],le.prototype,"category",void 0),de([(0,n.Cb)()],le.prototype,"theme",void 0),de([(0,n.SB)()],le.prototype,"open",void 0),le=de([(0,n.Mo)("solution-word")],le);var ce=i(36);const he=new Worker(new URL(i.p+i.u(975),i.b),{name:"words"});he.onerror=e=>{console.log("Error on the words worker:",e)};const ue=[];function pe(e){return new Promise(((t,i)=>{ue.push({message:e.toMakeGridMessage(),resolve:t,reject:i}),1===ue.length&&me()}))}function me(){ue.length&&he.postMessage(ue[0].message)}he.onmessage=e=>{if(!ue.length)return void console.log("Unexpected message from the words worker");const t=ue.shift();if(me(),e.data.message.seed===(null==t?void 0:t.message.seed))switch(e.data.type){case Q.GRID:t.resolve(e.data);break;case Q.UNKNOWN_VERSION:t.reject(`The words worker can't honor the version we asked for, ${e.data.message.version}`)}else console.log(`Expected to hear about ${null==t?void 0:t.message.seed}, instead got`,e.data)};let ge=Date.now();function fe(){ge=Date.now()}var ve=function(e,t,i,s){var o,n=arguments.length,r=n<3?t:null===s?s=Object.getOwnPropertyDescriptor(t,i):s;if("object"==typeof Reflect&&"function"==typeof Reflect.decorate)r=Reflect.decorate(e,t,i,s);else for(var a=e.length-1;a>=0;a--)(o=e[a])&&(r=(n<3?o(r):n>3?o(t,i,r):o(t,i))||r);return n>3&&r&&Object.defineProperty(t,i,r),r};let we=!0,ye=class extends o.oi{constructor(){super(...arguments),this.theme="light",this.puzzleId=ee.daily(),this.resumeImmediately=!1,this.puzzle=null,this.gameState=null,this.categoriesExpanded=!1,this.db=oe(),this.foregroundnessHandler=()=>{"visible"!==document.visibilityState&&this.pausePlay()},this.windowBlurHandler=()=>{this.pausePlay()},this.spacebarHandler=e=>{var t;" "===e.key&&((null===(t=this.gameState)||void 0===t?void 0:t.isPaused)?this.resumePlay():this.pausePlay())},this.showTimerHandler=()=>{this.requestUpdate()},this.pendingWords=[],this.pendingWordsJudgements=[],this.pendingWordsTimeoutId=0}render(){var e,t,i,s;const{theme:n,gameState:r}=this,a=n===l?"light"===n?"dark":"light":"auto",d=null!==(e=null==r?void 0:r.getWordCategories())&&void 0!==e?e:[];return o.dy`
       <div id="left-controls">
         <a @click=${this.goToHistory} title="Go to the history page">
           <mat-icon name="arrow_back"></mat-icon>
@@ -137,7 +137,7 @@
       <div id="controls">
         <a @click=${this.setTheme} title="Switch to ${a} theme">
           <mat-icon
-            name=${"default"===a?"contrast":`${a}_mode`}
+            name=${"auto"===a?"contrast":`${a}_mode`}
             data-theme=${a}
           ></mat-icon>
         </a>
@@ -555,7 +555,7 @@
         <div id="preferred-theme">
           Theme: ${this.renderThemeChoice("Light","light_mode")}
           ${this.renderThemeChoice("Dark","dark_mode")}
-          ${this.renderThemeChoice("Default","contrast")}
+          ${this.renderThemeChoice("Auto","contrast")}
         </div>
         <div id="preferred-timer">
           Timer: ${this.renderTimerChoice(!0,"visibility")}
@@ -605,7 +605,7 @@
         <a @click=${this.setPreferredTheme}>
           <mat-icon name=${t} data-theme=${i}></mat-icon>
         </a>
-        ${e} theme
+        ${e}
       </div>
     `}renderTimerChoice(e,t){const i=this.showTimer===e?"selected":"";return o.dy`
       <div class=${i}>
