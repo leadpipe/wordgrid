@@ -1,6 +1,6 @@
 import './events';
 import {PrefsEventTarget} from './events';
-import {Theme, ThemeOrDefault} from './types';
+import {Theme, ThemeOrAuto} from './types';
 
 /**
  * The event target for prefs events.
@@ -15,7 +15,7 @@ export function getCurrentSystemTheme(): Theme {
   return systemTheme;
 }
 
-let preferredTheme: ThemeOrDefault = 'default';
+let preferredTheme: ThemeOrAuto = 'auto';
 {
   const stored = window.localStorage.getItem('preferredTheme');
   switch (stored) {
@@ -27,14 +27,14 @@ let preferredTheme: ThemeOrDefault = 'default';
 }
 
 export function getCurrentTheme(): Theme {
-  return preferredTheme === 'default' ? systemTheme : preferredTheme;
+  return preferredTheme === 'auto' ? systemTheme : preferredTheme;
 }
 
-export function getPreferredTheme(): ThemeOrDefault {
+export function getPreferredTheme(): ThemeOrAuto {
   return preferredTheme;
 }
 
-export function setPreferredTheme(theme: ThemeOrDefault) {
+export function setPreferredTheme(theme: ThemeOrAuto) {
   if (theme !== preferredTheme) {
     const prev = getCurrentTheme();
     preferredTheme = theme;

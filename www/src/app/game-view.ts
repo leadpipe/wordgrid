@@ -21,7 +21,7 @@ import {
   setPreferredTheme,
 } from './prefs';
 import {MAY_SCROLL_CLASS} from './styles';
-import {Theme, ThemeOrDefault} from './types';
+import {Theme, ThemeOrAuto} from './types';
 import {
   renderCategory,
   renderCount,
@@ -187,7 +187,7 @@ export class GameView extends LitElement {
         ? theme === 'light'
           ? 'dark'
           : 'light'
-        : 'default';
+        : 'auto';
     const cats = gameState?.getWordCategories() ?? [];
     return html`
       <div id="left-controls">
@@ -198,7 +198,7 @@ export class GameView extends LitElement {
       <div id="controls">
         <a @click=${this.setTheme} title="Switch to ${newTheme} theme">
           <mat-icon
-            name=${newTheme === 'default' ? 'contrast' : `${newTheme}_mode`}
+            name=${newTheme === 'auto' ? 'contrast' : `${newTheme}_mode`}
             data-theme=${newTheme}
           ></mat-icon>
         </a>
@@ -427,7 +427,7 @@ export class GameView extends LitElement {
 
   private setTheme(event: Event) {
     const theme = (event.target as HTMLElement).dataset.theme;
-    setPreferredTheme(theme as ThemeOrDefault);
+    setPreferredTheme(theme as ThemeOrAuto);
   }
 
   private async requestAndLoadPuzzle() {

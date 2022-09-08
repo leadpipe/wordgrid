@@ -12,7 +12,7 @@ import {
   setShowTimer,
 } from './prefs';
 import {MAY_SCROLL_CLASS} from './styles';
-import {Theme, ThemeOrDefault} from './types';
+import {Theme, ThemeOrAuto} from './types';
 import {noteUsage} from './usage';
 
 /**
@@ -72,7 +72,7 @@ class HistoryView extends LitElement {
         <div id="preferred-theme">
           Theme: ${this.renderThemeChoice('Light', 'light_mode')}
           ${this.renderThemeChoice('Dark', 'dark_mode')}
-          ${this.renderThemeChoice('Default', 'contrast')}
+          ${this.renderThemeChoice('Auto', 'contrast')}
         </div>
         <div id="preferred-timer">
           Timer: ${this.renderTimerChoice(true, 'visibility')}
@@ -136,7 +136,7 @@ class HistoryView extends LitElement {
         <a @click=${this.setPreferredTheme}>
           <mat-icon name=${icon} data-theme=${theme}></mat-icon>
         </a>
-        ${themeTitle} theme
+        ${themeTitle}
       </div>
     `;
   }
@@ -211,7 +211,7 @@ class HistoryView extends LitElement {
   }
 
   private setPreferredTheme(event: Event) {
-    const theme = (event.target as HTMLElement).dataset.theme as ThemeOrDefault;
+    const theme = (event.target as HTMLElement).dataset.theme as ThemeOrAuto;
     this.preferredTheme = theme;
     setPreferredTheme(theme);
   }
