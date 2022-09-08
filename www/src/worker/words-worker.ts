@@ -10,13 +10,13 @@ import {
 } from './worker-types';
 
 export async function handleToWorkerMessage(
-  port: MessagePort,
+  scope: DedicatedWorkerGlobalScope,
   message: ToWorkerMessage
 ) {
   switch (message.type) {
     case ToWorkerMessageType.MAKE_GRID:
       await wordsPromise;
-      port.postMessage(makeGrid(message));
+      scope.postMessage(makeGrid(message));
       break;
   }
 }

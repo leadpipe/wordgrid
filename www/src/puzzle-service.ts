@@ -7,16 +7,16 @@ import {
 } from './worker/worker-types';
 
 /**
- * The shared worker that holds the trie and generates grids.
+ * The web worker that holds the trie and generates grids.  Note that webpack
+ * sees this code and handles it specially.
  */
-const wordsWorker = new SharedWorker(
+const wordsWorker = new Worker(
   /* webpackChunkName: 'words' */ new URL(
     'bootstrap-words.js',
     import.meta.url
   ),
   {name: 'words'}
 );
-wordsWorker.port.start();
 wordsWorker.onerror = (e: ErrorEvent) => {
   console.log(`Error on the words worker:`, e);
 };
@@ -26,7 +26,7 @@ interface PendingGrid {
   reject(message: string): void;
 }
 const pendingGrids: PendingGrid[] = [];
-wordsWorker.port.onmessage = (e: MessageEvent<FromWorkerMessage>) => {
+wordsWorker.onmessage = (e: MessageEvent<FromWorkerMessage>) => {
   if (!pendingGrids.length) {
     console.log('Unexpected message from the words worker');
     return;
@@ -34,7 +34,10 @@ wordsWorker.port.onmessage = (e: MessageEvent<FromWorkerMessage>) => {
   const pendingGrid = pendingGrids.shift();
   sendNextRequest();
   if (e.data.message.seed !== pendingGrid?.message.seed) {
-    console.log(`Expected to hear about ${pendingGrid?.message.seed}, instead got`, e.data);
+    console.log(
+      `Expected to hear about ${pendingGrid?.message.seed}, instead got`,
+      e.data
+    );
     return;
   }
   switch (e.data.type) {
@@ -60,6 +63,6 @@ export function requestPuzzle(puzzleId: PuzzleId): Promise<GridResultMessage> {
 
 function sendNextRequest() {
   if (pendingGrids.length) {
-    wordsWorker.port.postMessage(pendingGrids[0].message);
+    wordsWorker.postMessage(pendingGrids[0].message);
   }
 }
