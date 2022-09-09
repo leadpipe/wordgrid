@@ -1,29 +1,29 @@
 {
   "name": "Leadpipe Wordgrid",
-  "shortname": "Wordgrid",
+  "short_name": "Wordgrid",
   "description": "A word-finding game.",
   "categories": "games",
   "start_url": "https://leadpipe.github.io/wordgrid/",
   "id": "https://leadpipe.github.io/wordgrid/",
-  "display": "standalone",
-  "orientation": "landscape",
+  "display": "fullscreen",
+  "orientation": "landscape-primary",
   "theme_color": "white",
   "icons": [
     {
       "src": "lpwg-512.png",
       "type": "image/png",
       "sizes": "512x512"
-   },
-   {
+    },
+    {
       "src": "lpwg-256.png",
       "type": "image/png",
       "sizes": "256x256"
-   },
-   {
+    },
+    {
       "src": "lpwg-512-maskable.png",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "maskable"
-   }
+    }
   ]
 }
