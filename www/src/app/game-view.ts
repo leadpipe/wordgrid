@@ -153,6 +153,36 @@ export class GameView extends LitElement {
         flex: 1 1 0;
       }
 
+      @media (max-height: 550px) and (min-height: 400px) {
+        :host {
+          grid-template-columns: 1fr 300px 1fr;
+        }
+
+        grid-view {
+          width: 300px;
+          height: 300px;
+        }
+
+        #below-grid {
+          height: 64px;
+        }
+      }
+
+      @media (max-height: 400px) {
+        :host {
+          grid-template-columns: 1fr 240px 1fr;
+        }
+
+        grid-view {
+          width: 240px;
+          height: 240px;
+        }
+
+        #below-grid {
+          height: 64px;
+        }
+      }
+
       .not-a-word {
       }
 
