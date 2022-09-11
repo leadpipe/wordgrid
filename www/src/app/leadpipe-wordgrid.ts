@@ -84,6 +84,7 @@ export class LeadpipeWordgrid extends LitElement {
         return html`
           <game-view
             theme=${this.theme}
+            class="may-scroll"
             .puzzleId=${PuzzleId.fromSeed(this.puzzleSeed)}
             .resumeImmediately=${this.resumeImmediately}
           ></game-view>
