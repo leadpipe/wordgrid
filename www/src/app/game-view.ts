@@ -22,19 +22,18 @@ import {
 } from './prefs';
 import {MAY_SCROLL_CLASS} from './styles';
 import {Theme, ThemeOrAuto} from './types';
-import {
-  renderCategory,
-  renderCount,
-  renderCounts,
-  renderShortCounts,
-  sleepMs,
-} from './utils';
+import {renderCount, renderCounts, sleepMs} from './utils';
 import {noteUsage} from './usage';
 
 /**
  * Starts true, gets cleared when we've successfully received our first puzzle.
  */
 let loadingWords = true;
+
+/**
+ * Number of pixels we tell the grid-view to pad itself.
+ */
+const GRID_VIEW_PADDING = 10;
 
 /** Encapsulates the entire game page. */
 @customElement('game-view')
@@ -50,9 +49,26 @@ export class GameView extends LitElement {
         left: 0;
         padding-top: 8px;
         display: grid;
-        grid-template-columns: 1fr 400px 1fr;
+        grid-template-columns: 1fr var(--grid-side-extent) 1fr;
         grid-template-rows: min-content auto;
-        gap: 8px;
+        gap: var(--page-grid-gap);
+        --page-grid-gap: 8px;
+        --grid-view-padding: ${GRID_VIEW_PADDING}px;
+        --grid-spec-size: 6;
+        --grid-optimal-cell-side-extent: 80px;
+        --below-grid-height: 80px;
+        --grid-optimal-width: calc(
+          var(--grid-spec-size) * var(--grid-optimal-cell-side-extent) + 2 *
+            var(--grid-view-padding)
+        );
+        --grid-optimal-height: calc(
+          var(--grid-optimal-width) + var(--below-grid-height)
+        );
+        --base-grid-side-extent: var(--grid-optimal-width);
+        --grid-side-extent: min(
+          var(--base-grid-side-extent),
+          100vh - var(--below-grid-height)
+        );
       }
 
       a {
@@ -64,54 +80,49 @@ export class GameView extends LitElement {
         color: var(--text-color);
       }
 
-      #left-controls {
-        text-align: right;
+      #controls {
+        grid-column: 2;
+        margin-bottom: 16px;
+        display: flex;
+        justify-content: center;
       }
 
-      #controls {
-        margin-bottom: 16px;
+      #controls > div {
+        flex: 1 1 0;
         display: flex;
         justify-content: center;
         align-items: baseline;
         gap: 4px 16px;
       }
 
-      #right-controls {
-        display: flex;
+      #controls > div:nth-child(1) {
         justify-content: left;
-        align-items: baseline;
-        gap: 4px 16px;
       }
 
-      #categories,
+      #controls > div:nth-child(2) {
+        flex: 3 1 0;
+      }
+
+      #controls > div:nth-child(3) {
+        justify-content: right;
+      }
+
+      #summary,
       #found {
         flex: 1 1 50%;
         padding: 24px 16px 0;
       }
 
-      #categories {
+      #summary {
+        grid-column: 1;
         text-align: right;
       }
 
-      .cat-header {
-        display: flex;
-        flex-flow: row wrap;
-        column-gap: 8px;
-        margin-top: 8px;
-        justify-content: flex-end;
-      }
-
-      .cat-header .cat {
-        text-align: left;
-        min-width: 64px;
-      }
-
-      .cat-header .counts {
-        text-align: right;
-        min-width: 64px;
+      .opt-break {
       }
 
       #found {
+        min-height: 100px;
         column-width: 6em;
         column-fill: auto;
         overflow-wrap: break-word;
@@ -125,11 +136,12 @@ export class GameView extends LitElement {
       }
 
       grid-view {
-        width: 400px;
-        height: 400px;
+        width: var(--grid-side-extent);
+        height: var(--grid-side-extent);
       }
 
       #grid {
+        grid-column: 2;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -138,48 +150,38 @@ export class GameView extends LitElement {
       }
 
       #below-grid {
-        height: 80px;
+        height: var(--below-grid-height);
         width: 100%;
         display: flex;
         align-items: center;
       }
 
-      #below-grid * {
+      #below-grid > * {
         text-align: center;
         flex: 3 1 0;
       }
 
-      #below-grid *:nth-child(odd) {
+      #below-grid > *:nth-child(odd) {
         flex: 1 1 0;
       }
 
-      @media (max-height: 550px) and (min-height: 400px) {
+      @media (max-width: 700px) {
         :host {
-          grid-template-columns: 1fr 300px 1fr;
+          --grid-side-extent: min(
+            var(--base-grid-side-extent),
+            100vw - 2 * var(--page-grid-gap)
+          );
+          grid-template-rows: min-content min-content min-content auto;
         }
 
-        grid-view {
-          width: 300px;
-          height: 300px;
+        #summary,
+        #found {
+          grid-column: 2;
+          padding-top: 0;
         }
 
-        #below-grid {
-          height: 64px;
-        }
-      }
-
-      @media (max-height: 400px) {
-        :host {
-          grid-template-columns: 1fr 240px 1fr;
-        }
-
-        grid-view {
-          width: 240px;
-          height: 240px;
-        }
-
-        #below-grid {
-          height: 64px;
+        .opt-break {
+          display: none;
         }
       }
 
@@ -218,106 +220,69 @@ export class GameView extends LitElement {
           ? 'dark'
           : 'light'
         : 'auto';
-    const cats = gameState?.getWordCategories() ?? [];
     return html`
-      <div id="left-controls">
-        <a @click=${this.goToHistory} title="Go to the history page">
-          <mat-icon name="arrow_back"></mat-icon>
-        </a>
-      </div>
       <div id="controls">
-        <a @click=${this.setTheme} title="Switch to ${newTheme} theme">
-          <mat-icon
-            name=${newTheme === 'auto' ? 'contrast' : `${newTheme}_mode`}
-            data-theme=${newTheme}
-          ></mat-icon>
-        </a>
-        ${gameState && !gameState.isPaused
-          ? html`
-              <a @click=${this.rotatePuzzle} title="Rotate puzzle">
-                <mat-icon name="rotate_90_degrees_cw"></mat-icon>
-              </a>
-              <a @click=${this.flipPuzzle} title="Flip puzzle">
-                <mat-icon name="flip"></mat-icon>
-              </a>
-            `
-          : ''}
+        <div>
+          <a @click=${this.goToHistory} title="Go to the history page">
+            <mat-icon name="arrow_back"></mat-icon>
+          </a>
+        </div>
+        <div>
+          <a @click=${this.setTheme} title="Switch to ${newTheme} theme">
+            <mat-icon
+              name=${newTheme === 'auto' ? 'contrast' : `${newTheme}_mode`}
+              data-theme=${newTheme}
+            ></mat-icon>
+          </a>
+          ${gameState && !gameState.isPaused
+            ? html`
+                <a @click=${this.rotatePuzzle} title="Rotate puzzle">
+                  <mat-icon name="rotate_90_degrees_cw"></mat-icon>
+                </a>
+                <a @click=${this.flipPuzzle} title="Flip puzzle">
+                  <mat-icon name="flip"></mat-icon>
+                </a>
+              `
+            : ''}
+        </div>
+        <div>
+          <a
+            href="https://github.com/leadpipe/wordgrid/issues/new"
+            target="_blank"
+            title="File a bug report"
+            ><mat-icon name="bug_report"></mat-icon></a
+          ><a
+            href="https://github.com/leadpipe/wordgrid/#readme"
+            target="_blank"
+            title="Help"
+            ><mat-icon name="help"></mat-icon
+          ></a>
+        </div>
       </div>
-      <div id="right-controls">
-        <a
-          href="https://github.com/leadpipe/wordgrid/issues/new"
-          target="_blank"
-          title="File a bug report"
-          ><mat-icon name="bug_report"></mat-icon></a
-        ><a
-          href="https://github.com/leadpipe/wordgrid/#readme"
-          target="_blank"
-          title="Help"
-          ><mat-icon name="help"></mat-icon
-        ></a>
-      </div>
-      <div id="categories" class="may-scroll">
+      <div id="summary">
         ${gameState
           ? html`
-              Words have <b>${gameState.puzzleId.spec.minLength}</b> or more
-              letters.
-              ${getShowTimer()
-                ? html`
-                    <div>
-                      Earned ${renderCount(gameState.earnedPoints, 'point')}.
-                    </div>
-                  `
-                : ''}
               <div>
-                Found ${renderCounts(gameState.getWordCounts(), 'word')},<br />
+                <b>${gameState.puzzleId.spec.minLength}</b> or more letters.
+                <br class="opt-break" />
+                ${getShowTimer()
+                  ? html`
+                      Earned ${renderCount(gameState.earnedPoints, 'point')}.
+                    `
+                  : ''}
+              </div>
+              <div>
+                ${renderCounts(gameState.getWordCounts(), 'word')},
+                <br class="opt-break" />
                 ${renderCounts(gameState?.getWordPoints(), 'point')}.
               </div>
-              <a
-                @click=${this.toggleCategories}
-                title=${this.categoriesExpanded ? 'Collapse' : 'Expand'}
-              >
-                <mat-icon
-                  name="expand_${this.categoriesExpanded ? 'less' : 'more'}"
-                ></mat-icon>
-              </a>
             `
-          : ''}
-        ${this.categoriesExpanded
-          ? cats.map(cat => {
-              const counts = gameState!.getWordCounts(cat);
-              const points = gameState!.getWordPoints(cat);
-              return html`
-                <section>
-                  <div class="cat-header">
-                    <span class="cat">${renderCategory(cat)}</span>
-                    <span title="Words" class="counts"
-                      >${renderShortCounts(counts)}</span
-                    >
-                    <span title="Points" class="counts"
-                      >${renderShortCounts(points)}</span
-                    >
-                  </div>
-                  <div>
-                    ${[...this.gameState!.getFoundWords(cat)]
-                      .reverse()
-                      .map(
-                        word => html`
-                          <solution-word
-                            word=${word}
-                            theme=${this.theme}
-                          ></solution-word>
-                        `
-                      )}
-                  </div>
-                </section>
-              `;
-            })
           : ''}
       </div>
       <div id="grid">
         <grid-view
           theme=${this.theme}
-          padding="10"
+          padding="${GRID_VIEW_PADDING}"
           isInteractive
           .isPaused=${gameState?.isPaused ?? true}
           .puzzleId=${this.puzzleId}
@@ -357,9 +322,23 @@ export class GameView extends LitElement {
                   : gameState.isPaused
                   ? html`
                       <div>
-                        <a @click=${this.resumePlay} title="Resume play">
-                          <mat-icon name="play_circle" size="large"></mat-icon>
-                        </a>
+                        ${gameState.isStarted
+                          ? html`
+                              <a @click=${this.resumePlay} title="Resume play">
+                                <mat-icon
+                                  name="play_circle"
+                                  size="large"
+                                ></mat-icon>
+                              </a>
+                            `
+                          : html`
+                              <a @click=${this.resumePlay} title="Start play">
+                                <mat-icon
+                                  name="not_started"
+                                  size="large"
+                                ></mat-icon>
+                              </a>
+                            `}
                       </div>
                       <div>
                         <a @click=${this.quit} title="Quit" class="right">
@@ -403,7 +382,6 @@ export class GameView extends LitElement {
 
   @state() private puzzle: GridResultMessage | null = null;
   private gameState: GameState | null = null;
-  @state() private categoriesExpanded = false;
   private readonly db = openWordgridDb();
 
   private readonly foregroundnessHandler = () => {
@@ -464,6 +442,7 @@ export class GameView extends LitElement {
     const {puzzleId} = this;
     this.puzzle = null;
     this.gameState = null;
+    this.style.setProperty('--grid-spec-size', puzzleId.spec.size.toString());
     const puzzle = await requestPuzzle(puzzleId);
     // If there are no words in this grid, move on to the next puzzle.
     if (puzzle.words.size === 0) {
@@ -489,7 +468,6 @@ export class GameView extends LitElement {
     } else {
       this.gameState = new GameState(this.puzzleId, puzzle);
     }
-    this.categoriesExpanded = false;
     this.puzzle = puzzle;
     loadingWords = false;
     if (this.gameState.isComplete) {
@@ -579,10 +557,6 @@ export class GameView extends LitElement {
         grid,
       };
     }
-  }
-
-  private toggleCategories(_event: Event) {
-    this.categoriesExpanded = !this.categoriesExpanded;
   }
 
   @state() private pendingWords: readonly string[] = [];
