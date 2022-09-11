@@ -453,7 +453,7 @@ export class GridView extends LitElement {
       case 5:
         return ['LEAD ', ' PIPE', '     ', 'WORD ', ' GRID'];
       case 6:
-        return ['      ', ' LEAD ', ' PIPE ', ' WORD ', ' GRID ', '      '];
+        return ['  LEAD', '  PIPE', '      ', '      ', 'WORD  ', 'GRID  '];
     }
   }
 
