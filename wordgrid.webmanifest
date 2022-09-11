@@ -6,7 +6,6 @@
   "start_url": "https://leadpipe.github.io/wordgrid/",
   "id": "https://leadpipe.github.io/wordgrid/",
   "display": "fullscreen",
-  "orientation": "landscape-primary",
   "theme_color": "white",
   "icons": [
     {
