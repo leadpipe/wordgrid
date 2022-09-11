@@ -21,8 +21,8 @@ export function renderCount(count: number, countingWhat: string) {
 export function renderCounts(counts: Counts | undefined, countingWhat: string) {
   if (!counts) return '';
   return html`${counts.found} / ${counts.total}
-  ${pluralize(countingWhat, counts.total)} —
-  ${Math.round((counts.found / counts.total) * 100)}%`;
+  ${pluralize(countingWhat, counts.total)}
+  (${Math.round((counts.found / counts.total) * 100)}%)`;
 }
 
 export function renderShortCounts(counts: Counts) {
