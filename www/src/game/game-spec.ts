@@ -12,7 +12,7 @@ export interface GameSpec {
   readonly name: string;
 
   /**
-   * The size of (one side of) the word grid.
+   * The size of (one side of) the word grid, ie the number of letters.
    */
   readonly size: number;
 
