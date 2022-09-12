@@ -52,6 +52,11 @@ impl JsRandom {
     self.rng().gen()
   }
 
+  #[wasm_bindgen(js_name = "nextByte")]
+  pub fn next_byte(&mut self) -> u8 {
+    self.rng().gen()
+  }
+
   /// Returns true with the given probability.
   pub fn choice(&mut self, p: f64) -> bool {
     self.rng().gen_bool(p)
