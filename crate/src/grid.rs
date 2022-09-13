@@ -3,7 +3,10 @@ use std::collections::HashMap;
 use rand::Rng;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
-use crate::{words::{WordCategory, Words}, JsRandom};
+use crate::{
+  words::{WordCategory, Words},
+  JsRandom,
+};
 
 /// The square grid of characters in which to find words.
 #[wasm_bindgen]

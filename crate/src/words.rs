@@ -4,7 +4,7 @@ use qp_trie::Trie;
 use rand::distributions::WeightedIndex;
 use rand::prelude::Rng;
 use rand_distr::Distribution;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::wasm_bindgen;
 
 #[derive(Clone, Debug)]
@@ -71,9 +71,9 @@ fn word_and_category(line: &str) -> Result<(&str, WordCategory), String> {
   let sep = bytes[len - 2] as char;
   if sep != ':' {
     return Err(format!(
-        "Each word in the file must be followed by ':'; found '{}' on line '{}'",
-        sep, line
-      ));
+      "Each word in the file must be followed by ':'; found '{}' on line '{}'",
+      sep, line
+    ));
   }
   Ok((
     &line[0..len - 2],
@@ -95,7 +95,9 @@ impl WordsBuilder {
   pub fn build(mut self) -> Words {
     if self.partial_line.len() > 0 {
       let last_line = self.partial_line.clone();
-      self.add_line(std::str::from_utf8(&last_line).unwrap()).unwrap();
+      self
+        .add_line(std::str::from_utf8(&last_line).unwrap())
+        .unwrap();
     }
     let mut letters: Vec<char> = self.letter_counts.distinct_elements().copied().collect();
     letters.sort_unstable();
@@ -198,7 +200,9 @@ mod tests {
   #[test]
   fn test_single_complete_chunk() {
     let mut builder = Words::builder();
-    builder.add_lines_from_chunk("aaa:1\nbbb:2\n".as_bytes()).unwrap();
+    builder
+      .add_lines_from_chunk("aaa:1\nbbb:2\n".as_bytes())
+      .unwrap();
     let words = builder.build();
     assert_eq!(words.count(), 2);
     assert_eq!(words.word_category("aaa"), Some(WordCategory::Level1));
@@ -208,7 +212,9 @@ mod tests {
   #[test]
   fn test_single_incomplete_chunk() {
     let mut builder = Words::builder();
-    builder.add_lines_from_chunk("aaa:1\nbbb:2".as_bytes()).unwrap();
+    builder
+      .add_lines_from_chunk("aaa:1\nbbb:2".as_bytes())
+      .unwrap();
     let words = builder.build();
     assert_eq!(words.count(), 2);
     assert_eq!(words.word_category("aaa"), Some(WordCategory::Level1));
@@ -219,7 +225,9 @@ mod tests {
   fn test_multiple_chunks_complete() {
     let mut builder = Words::builder();
     builder.add_lines_from_chunk("aaa:".as_bytes()).unwrap();
-    builder.add_lines_from_chunk("1\nbbb:2\n".as_bytes()).unwrap();
+    builder
+      .add_lines_from_chunk("1\nbbb:2\n".as_bytes())
+      .unwrap();
     let words = builder.build();
     assert_eq!(words.count(), 2);
     assert_eq!(words.word_category("aaa"), Some(WordCategory::Level1));

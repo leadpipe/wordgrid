@@ -1,4 +1,9 @@
-use std::{time::Instant, fs::File, io::{BufReader, BufRead}, env};
+use std::{
+  env,
+  fs::File,
+  io::{BufRead, BufReader},
+  time::Instant,
+};
 
 use chrono::{Duration, Local, NaiveDate};
 use leadpipe_wordgrid::*;
@@ -9,21 +14,27 @@ struct PuzzleSize {
   size: usize,
   min_length: usize,
 }
-const SMALL: PuzzleSize = PuzzleSize{size: 4, min_length: 3};
-const MEDIUM: PuzzleSize = PuzzleSize{size: 5, min_length: 4};
-const LARGE: PuzzleSize = PuzzleSize{size: 6, min_length: 5};
+const SMALL: PuzzleSize = PuzzleSize {
+  size: 4,
+  min_length: 3,
+};
+const MEDIUM: PuzzleSize = PuzzleSize {
+  size: 5,
+  min_length: 4,
+};
+const LARGE: PuzzleSize = PuzzleSize {
+  size: 6,
+  min_length: 5,
+};
 
 /// Generates a series of word grids, finding all their words, and prints some
 /// info about word counts.
 fn main() {
   let args: Vec<String> = env::args().collect();
   assert_eq!(2, args.len(), "usage: {} <ending-date>", args[0]);
-  let end = args[1].parse::<NaiveDate>().unwrap_or_else(|_| {
-      panic!(
-          "ending-date (`{}`) must be formatted as %Y-%m-%d",
-          args[1]
-      )
-  });
+  let end = args[1]
+    .parse::<NaiveDate>()
+    .unwrap_or_else(|_| panic!("ending-date (`{}`) must be formatted as %Y-%m-%d", args[1]));
   let start = Local::today().naive_local();
 
   eprint!("Loading words... ");
@@ -46,9 +57,18 @@ fn main() {
     large_range = update_range(large_range, &words, date, LARGE);
   }
 
-  println!("Small:   min {} on {}; max {} on {}", small_range.0.0, small_range.0.1, small_range.1.0, small_range.1.1);
-  println!("Medium:  min {} on {}; max {} on {}", medium_range.0.0, medium_range.0.1, medium_range.1.0, medium_range.1.1);
-  println!("Large:   min {} on {}; max {} on {}", large_range.0.0, large_range.0.1, large_range.1.0, large_range.1.1);
+  println!(
+    "Small:   min {} on {}; max {} on {}",
+    small_range.0 .0, small_range.0 .1, small_range.1 .0, small_range.1 .1
+  );
+  println!(
+    "Medium:  min {} on {}; max {} on {}",
+    medium_range.0 .0, medium_range.0 .1, medium_range.1 .0, medium_range.1 .1
+  );
+  println!(
+    "Large:   min {} on {}; max {} on {}",
+    large_range.0 .0, large_range.0 .1, large_range.1 .0, large_range.1 .1
+  );
 }
 
 fn build_words_from_file(fname: &str) -> Words {
@@ -72,7 +92,12 @@ fn count_and_date(words: &Words, date: NaiveDate, puzzle_size: PuzzleSize) -> Co
   (count_words(words, date, puzzle_size), date)
 }
 
-fn update_range(range:CountRange, words: &Words, date: NaiveDate, puzzle_size: PuzzleSize) -> CountRange {
+fn update_range(
+  range: CountRange,
+  words: &Words,
+  date: NaiveDate,
+  puzzle_size: PuzzleSize,
+) -> CountRange {
   let count = count_and_date(words, date, puzzle_size);
   (std::cmp::min(count, range.0), std::cmp::max(count, range.1))
 }

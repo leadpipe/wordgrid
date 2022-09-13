@@ -1,4 +1,8 @@
-use std::{time::Instant, fs::File, io::{BufReader, BufRead}};
+use std::{
+  fs::File,
+  io::{BufRead, BufReader},
+  time::Instant,
+};
 
 use leadpipe_wordgrid::*;
 use multiset::HashMultiSet;
