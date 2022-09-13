@@ -40,7 +40,7 @@ export function isWordsComplete(
  */
 export interface WordgridDb extends DBSchema {
   games: {
-    key: string; // The puzzle ID seed string.
+    key: string; // The puzzle ID (seed) string.
     value: {
       puzzleId: string;
       lastPlayed: Date;

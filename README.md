@@ -124,9 +124,9 @@ caches all its files. It stores your game history in your browser's
 [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API).
 
 Wordgrid uses [WebAssembly](https://www.google.com/search?q=define+%2Bwasm)
-(Wasm) for the [shared
-worker](https://developer.mozilla.org/en-US/docs/Web/API/SharedWorker) that
-generates grids and finds all the words they contain. This portion is written in
+(Wasm) for the [web
+worker](https://developer.mozilla.org/en-US/docs/Web/API/Worker) that generates
+grids and finds all the words they contain. This portion is written in
 [Rust](https://www.rust-lang.org/) and compiled to Wasm using
 [wasm-pack](https://github.com/rustwasm/wasm-pack).
 
