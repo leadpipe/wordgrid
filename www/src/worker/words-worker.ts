@@ -21,8 +21,6 @@ export async function handleToWorkerMessage(
   }
 }
 
-console.log('Loading words...');
-
 let words: wasm.Words;
 const wordsPromise = loadWords();
 async function loadWords() {
@@ -35,7 +33,6 @@ async function loadWords() {
     builder.addLines(result.value);
   }
   words = builder.build();
-  console.log(`Loaded ${words.count()} words`);
 }
 
 function makeGrid(m: MakeGridMessage): GridResultMessage|UnknownVersionMessage {
