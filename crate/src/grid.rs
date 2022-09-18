@@ -54,7 +54,7 @@ impl Grid {
   /// min_length letters.
   #[wasm_bindgen(js_name = "findWords")]
   pub fn find_words_js(&self, words: &Words, min_length: usize) -> JsValue {
-    JsValue::from_serde(&self.find_words(words, min_length)).unwrap()
+    serde_wasm_bindgen::to_value(&self.find_words(words, min_length)).unwrap()
   }
 }
 

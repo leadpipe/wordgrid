@@ -35,18 +35,20 @@ async function loadWords() {
   words = builder.build();
 }
 
-function makeGrid(m: MakeGridMessage): GridResultMessage|UnknownVersionMessage {
+function makeGrid(
+  m: MakeGridMessage
+): GridResultMessage | UnknownVersionMessage {
   if (m.version !== WORDS_VERSION) {
     return {
       type: FromWorkerMessageType.UNKNOWN_VERSION,
       message: m,
       versions: new Set([WORDS_VERSION]),
-    }
+    };
   }
 
   const random = new wasm.JsRandom(m.seed);
   const grid = new wasm.Grid(words, m.size, random);
-  const obj = grid.findWords(words, m.minLength);
+  const map: Map<string, string> = grid.findWords(words, m.minLength);
 
   const lines = [];
   for (let r = 0; r < grid.size(); ++r) {
@@ -58,10 +60,10 @@ function makeGrid(m: MakeGridMessage): GridResultMessage|UnknownVersionMessage {
   }
 
   const gridWords = new Map<string, wasm.WordCategory>();
-  for (const word of Object.keys(obj).sort()) {
+  for (const [word, catName] of [...map.entries()].sort()) {
     gridWords.set(
       word.toUpperCase(),
-      wasm.WordCategory[obj[word]] as unknown as wasm.WordCategory
+      wasm.WordCategory[catName as keyof typeof wasm.WordCategory]
     );
   }
 
