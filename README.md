@@ -1,7 +1,7 @@
-LEADPIPE WORDGRID is a word-finding game that runs in your web browser.  Trace
-through neighboring letters in the grid to form words.  Each valid word is worth
-points.  Accumulate as many points as possible before the timer runs out — or
-turn off the timer and just look for words at your leisure.
+LEADPIPE WORDGRID is a word-finding game that runs in your web browser. Trace
+through neighboring letters in the grid, in any direction, to form words. Each
+valid word is worth points. Accumulate as many points as possible before the
+timer runs out — or turn off the timer and just look for words at your leisure.
 
 # Game play
 
@@ -42,14 +42,14 @@ will be recorded.
 Each word is worth a set number of points depending on the number of letters in
 it.
 
-  | Length of word | Number of points |
-  | :---:          | :---: |
-  | 3 or 4         | 1     |
-  | 5              | 2     |
-  | 6              | 3     |
-  | 7              | 5     |
-  | 8              | 11    |
-  | 9 or more $(n)$| $2n$  |
+| Length of word  | Number of points |
+| :-------------: | :--------------: |
+|     3 or 4      |        1         |
+|        5        |        2         |
+|        6        |        3         |
+|        7        |        5         |
+|        8        |        11        |
+| 9 or more $(n)$ |       $2n$       |
 
 You earn points by recording words before the timer expires. You may continue to
 find words after the timer expires, but won't be awarded any more points.
@@ -78,11 +78,11 @@ that category.
 
 Wordgrid has small, medium, and large games:
 
-  | Game size | Grid size | Min word length | Time      |
-  | ---       | ---       | ---             | ---       |
-  | Small     | 4⨉4       | 3               | 3 minutes |
-  | Medium    | 5⨉5       | 4               | 3 minutes |
-  | Large     | 6⨉6       | 5               | 4 minutes |
+| Game size | Grid size | Min word length | Time      |
+| --------- | --------- | --------------- | --------- |
+| Small     | 4⨉4       | 3               | 3 minutes |
+| Medium    | 5⨉5       | 4               | 3 minutes |
+| Large     | 6⨉6       | 5               | 4 minutes |
 
 ## Daily game
 
@@ -164,16 +164,17 @@ from a now defunct Android app called WordzUp.
 
 SCOWL (the source of Wordgrid's dictionary) is marked with the following
 copyright and permission notice:
+
 > Copyright 2000-2018 by Kevin Atkinson
 
 > Permission to use, copy, modify, distribute and sell these word
-  lists, the associated scripts, the output created from the scripts,
-  and its documentation for any purpose is hereby granted without fee,
-  provided that the above copyright notice appears in all copies and
-  that both that copyright notice and this permission notice appear in
-  supporting documentation. Kevin Atkinson makes no representations
-  about the suitability of this array for any purpose. It is provided
-  "as is" without express or implied warranty.
+> lists, the associated scripts, the output created from the scripts,
+> and its documentation for any purpose is hereby granted without fee,
+> provided that the above copyright notice appears in all copies and
+> that both that copyright notice and this permission notice appear in
+> supporting documentation. Kevin Atkinson makes no representations
+> about the suitability of this array for any purpose. It is provided
+> "as is" without express or implied warranty.
 
 [MDN](https://developer.mozilla.org/en-US/) is my go-to source for everything
 Web. I visit MDN many times every day.
