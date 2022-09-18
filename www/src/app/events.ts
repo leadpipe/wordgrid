@@ -52,6 +52,11 @@ declare global {
      * the timer was being shown.
      */
     'timer-expired': CustomEvent<boolean>;
+
+    /**
+     * Sent by meta-panel when the user clicks the settings icon.
+     */
+    'show-settings': CustomEvent<void>;
   }
 }
 

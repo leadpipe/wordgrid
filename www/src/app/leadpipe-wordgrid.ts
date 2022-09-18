@@ -1,12 +1,22 @@
 import './events';
 import './game-view';
 import './history-view';
+import './mat-icon';
 
-import {css, html, LitElement} from 'lit';
-import {customElement, property, state} from 'lit/decorators.js';
+import {css, html, LitElement, TemplateResult} from 'lit';
+import {customElement, property, query, state} from 'lit/decorators.js';
+import {gameSpecByName} from '../game/game-spec';
 import {PuzzleId} from '../game/puzzle-id';
-import {Theme} from './types';
-import {getCurrentTheme, prefsTarget} from './prefs';
+import {openWordgridDb} from '../game/wordgrid-db';
+import {Theme, ThemeOrAuto} from './types';
+import {
+  getCurrentTheme,
+  getPreferredTheme,
+  getShowTimer,
+  prefsTarget,
+  setPreferredTheme,
+  setShowTimer,
+} from './prefs';
 import {lastUsedPlus} from './usage';
 import {PuzzleToPlay} from './events';
 import {
@@ -18,6 +28,7 @@ import {
   LIGHT_THEME_TEXT,
   MAY_SCROLL_CLASS,
 } from './styles';
+import {ensureExhaustiveSwitch} from './utils';
 
 type Page = 'play' | 'history';
 
@@ -52,33 +63,120 @@ function refreshDaily(root: LeadpipeWordgrid) {
 /** Top-level component. */
 @customElement('leadpipe-wordgrid')
 export class LeadpipeWordgrid extends LitElement {
-  static override styles = [MAY_SCROLL_CLASS, css`
-    :host {
-      display: block;
-      position: fixed;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      left: 0;
-      --background: ${LIGHT_THEME_BACKGROUND};
-      --text-color: ${LIGHT_THEME_TEXT};
-      --highlight-background: ${LIGHT_BLUE};
-      --scrollbar-thumb-color: #bbb;
-      --scrollbar-track-color: #eee;
-      background: var(--background);
-      color: var(--text-color);
-    }
+  static override styles = [
+    MAY_SCROLL_CLASS,
+    css`
+      :host {
+        display: block;
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        --background: ${LIGHT_THEME_BACKGROUND};
+        --text-color: ${LIGHT_THEME_TEXT};
+        --highlight-background: ${LIGHT_BLUE};
+        --scrollbar-thumb-color: #bbb;
+        --scrollbar-track-color: #eee;
+        background: var(--background);
+        color: var(--text-color);
+      }
 
-    :host([theme='dark']) {
-      --background: ${DARK_THEME_BACKGROUND};
-      --text-color: ${DARK_THEME_TEXT};
-      --highlight-background: ${DARK_BLUE};
-      --scrollbar-thumb-color: #555;
-      --scrollbar-track-color: #333;
-    }
-  `];
+      :host([theme='dark']) {
+        --background: ${DARK_THEME_BACKGROUND};
+        --text-color: ${DARK_THEME_TEXT};
+        --highlight-background: ${DARK_BLUE};
+        --scrollbar-thumb-color: #555;
+        --scrollbar-track-color: #333;
+      }
+
+      dialog,
+      button {
+        background: var(--background);
+        color: var(--text-color);
+      }
+
+      dialog {
+        padding: 4px 4px 12px;
+      }
+
+      dialog > * {
+        padding-left: 8px;
+        padding-right: 8px;
+      }
+
+      a {
+        cursor: pointer;
+        text-decoration: none;
+      }
+
+      :host a {
+        color: var(--text-color);
+      }
+
+      #close-settings {
+        display: block;
+        text-align: right;
+        padding-right: 0;
+      }
+
+      .settings-header {
+        margin: 8px 0px 4px;
+        padding-left: 8px;
+        border-bottom: 1px solid gray;
+        font-size: 90%;
+      }
+
+      .selected {
+        background: var(--highlight-background);
+      }
+    `,
+  ];
 
   override render() {
+    return [
+      html`
+        <dialog id="settings">
+          <a id="close-settings" @click=${this.closeSettings} title="Close"
+            ><mat-icon name="clear"></mat-icon
+          ></a>
+          <div class="settings-header">New puzzle</div>
+          <div>
+            ${this.renderNewPuzzleButton('Small')}
+            ${this.renderNewPuzzleButton('Medium')}
+            ${this.renderNewPuzzleButton('Large')}
+          </div>
+          <div class="settings-header">Theme</div>
+          ${this.renderThemeChoice('Light', 'light_mode')}
+          ${this.renderThemeChoice('Dark', 'dark_mode')}
+          ${this.renderThemeChoice('Auto', 'contrast')}
+          <div class="settings-header">Timer</div>
+          ${this.renderTimerChoice(true, 'visibility')}
+          ${this.renderTimerChoice(false, 'visibility_off')}
+          <div class="settings-header">Meta</div>
+          <div>
+            <a
+              href="https://github.com/leadpipe/wordgrid/issues/new"
+              target="_blank"
+              title="File a bug report"
+              ><mat-icon name="bug_report"></mat-icon> Report a bug</a
+            >
+          </div>
+          <div>
+            <a
+              href="https://github.com/leadpipe/wordgrid/#readme"
+              target="_blank"
+              title="Help"
+              ><mat-icon name="help"></mat-icon> Read help</a
+            >
+          </div>
+        </dialog>
+      `,
+      this.renderPage(),
+    ];
+  }
+
+  private renderPage(): TemplateResult {
     switch (this.page) {
       case 'play':
         return html`
@@ -97,8 +195,52 @@ export class LeadpipeWordgrid extends LitElement {
             expandedPuzzle=${this.puzzleSeed}
           ></history-view>
         `;
+      default:
+        ensureExhaustiveSwitch(this.page);
     }
   }
+
+  private renderThemeChoice(themeTitle: string, icon: string) {
+    const theme = themeTitle.toLowerCase();
+    const cls = this.preferredTheme === theme ? 'selected' : '';
+    return html`
+      <div class=${cls}>
+        <a @click=${this.setPreferredTheme} data-theme=${theme}>
+          <mat-icon name=${icon}></mat-icon>
+          ${themeTitle}
+        </a>
+      </div>
+    `;
+  }
+
+  private renderTimerChoice(show: boolean, icon: string) {
+    const cls = this.showTimer === show ? 'selected' : '';
+    return html`
+      <div class=${cls}>
+        <a @click=${this.setShowTimer} data-show=${show}>
+          <mat-icon name=${icon}></mat-icon>
+          ${show ? 'Show' : "Don't show"} the timer
+        </a>
+      </div>
+    `;
+  }
+
+  private renderNewPuzzleButton(size: string) {
+    return html`
+      <button @click=${this.newPuzzle} data-name="${size}">${size}</button>
+    `;
+  }
+
+  @property({reflect: true}) theme: Theme = getCurrentTheme();
+
+  @state() page: Page = 'play';
+  @state() puzzleSeed: string = '';
+  @state() resumeImmediately = false;
+  @state() preferredTheme = getPreferredTheme();
+  @state() showTimer = getShowTimer();
+  @query('#settings') settingsDialog!: HTMLDialogElement;
+
+  private readonly db = openWordgridDb();
 
   constructor() {
     super();
@@ -107,14 +249,9 @@ export class LeadpipeWordgrid extends LitElement {
     this.addEventListener('show-history', event =>
       this.handleShowHistory(event)
     );
+    this.addEventListener('show-settings', () => this.handleShowSettings());
     refreshDaily(this);
   }
-
-  @property({reflect: true}) theme: Theme = getCurrentTheme();
-
-  @state() page: Page = 'play';
-  @state() puzzleSeed: string = '';
-  @state() resumeImmediately = false;
 
   private readonly themeHandler = (event: CustomEvent<Theme>) => {
     this.theme = event.detail;
@@ -169,6 +306,7 @@ export class LeadpipeWordgrid extends LitElement {
     this.resumeImmediately = false;
     this.updateLocation();
   }
+
   private updateLocation() {
     const {page, puzzleSeed} = this;
     const newHash = puzzleSeed ? `#${page}/${puzzleSeed}` : `#${page}`;
@@ -188,6 +326,61 @@ export class LeadpipeWordgrid extends LitElement {
     this.page = 'history';
     this.puzzleSeed = event.detail?.seed ?? '';
     this.updateLocation();
+  }
+
+  private handleShowSettings() {
+    this.settingsDialog.showModal();
+  }
+
+  private closeSettings() {
+    this.settingsDialog.close();
+  }
+
+  private setPreferredTheme(event: Event) {
+    const theme = this.findData(event, 'theme') as ThemeOrAuto;
+    this.preferredTheme = theme;
+    setPreferredTheme(theme);
+  }
+
+  private setShowTimer(event: Event) {
+    const show = this.findData(event, 'show') === 'true';
+    this.showTimer = show;
+    setShowTimer(show);
+  }
+
+  private findData(event: Event, dataName: string): string {
+    let el = event.target as HTMLElement | null;
+    while (el) {
+      if (dataName in el.dataset) {
+        return el.dataset[dataName]!;
+      }
+      el = el.parentElement;
+    }
+    return '';
+  }
+
+  private async newPuzzle(event: Event) {
+    this.settingsDialog.close();
+    const name = (event.target as HTMLElement).dataset.name!;
+    const spec = gameSpecByName(name);
+    const date = new Date();
+    const db = await this.db;
+    for (let counter = 1; true; ++counter) {
+      const puzzleId = PuzzleId.forSpec(spec, date, counter);
+      const cursor = await db
+        .transaction('games')
+        .store.openCursor(puzzleId.seed);
+      if (!cursor) {
+        this.dispatchEvent(
+          new CustomEvent('play-puzzle', {
+            detail: {puzzleId: puzzleId},
+            bubbles: true,
+            composed: true,
+          })
+        );
+        return;
+      }
+    }
   }
 }
 

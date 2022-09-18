@@ -2,17 +2,9 @@ import './game-summary';
 
 import {css, html, LitElement, PropertyValues} from 'lit';
 import {customElement, property, state} from 'lit/decorators.js';
-import {gameSpecByName} from '../game/game-spec';
-import {PuzzleId} from '../game/puzzle-id';
 import {GameRecord, openWordgridDb} from '../game/wordgrid-db';
-import {
-  getPreferredTheme,
-  getShowTimer,
-  setPreferredTheme,
-  setShowTimer,
-} from './prefs';
 import {MAY_SCROLL_CLASS} from './styles';
-import {Theme, ThemeOrAuto} from './types';
+import {Theme} from './types';
 import {noteUsage} from './usage';
 
 /**
@@ -31,15 +23,7 @@ class HistoryView extends LitElement {
         height: 100%;
       }
 
-      a {
-        cursor: pointer;
-      }
-
-      :host a {
-        color: var(--text-color);
-      }
-
-      #actions {
+      meta-panel {
         float: right;
       }
 
@@ -47,10 +31,6 @@ class HistoryView extends LitElement {
         margin: 8px 0;
         font-size: 24px;
         font-weight: bold;
-      }
-
-      .selected {
-        background: var(--highlight-background);
       }
 
       li {
@@ -62,44 +42,7 @@ class HistoryView extends LitElement {
   protected override render() {
     const {gameRecordsByDate, expandedPuzzle} = this;
     if (!gameRecordsByDate) return 'Loading games...';
-    return html` <div id="actions">
-        <div id="new-puzzle">
-          New puzzle: <br />
-          ${this.renderNewPuzzleButton('Small')}
-          ${this.renderNewPuzzleButton('Medium')}
-          ${this.renderNewPuzzleButton('Large')}
-        </div>
-        <div id="preferred-theme">
-          Theme: ${this.renderThemeChoice('Light', 'light_mode')}
-          ${this.renderThemeChoice('Dark', 'dark_mode')}
-          ${this.renderThemeChoice('Auto', 'contrast')}
-        </div>
-        <div id="preferred-timer">
-          Timer: ${this.renderTimerChoice(true, 'visibility')}
-          ${this.renderTimerChoice(false, 'visibility_off')}
-        </div>
-        <div>
-          Meta:
-          <div>
-            <a
-              href="https://github.com/leadpipe/wordgrid/issues/new"
-              target="_blank"
-              title="File a bug report"
-              ><mat-icon name="bug_report"></mat-icon
-            ></a>
-            Report a bug
-          </div>
-          <div>
-            <a
-              href="https://github.com/leadpipe/wordgrid/#readme"
-              target="_blank"
-              title="Help"
-              ><mat-icon name="help"></mat-icon
-            ></a>
-            Read help
-          </div>
-        </div>
-      </div>
+    return html` <meta-panel></meta-panel>
       ${[...gameRecordsByDate.entries()].map(
         ([date, records]) => html`
           <div>
@@ -122,40 +65,7 @@ class HistoryView extends LitElement {
       )}`;
   }
 
-  private renderNewPuzzleButton(size: string) {
-    return html`
-      <button @click=${this.newPuzzle} data-name="${size}">${size}</button>
-    `;
-  }
-
-  private renderThemeChoice(themeTitle: string, icon: string) {
-    const theme = themeTitle.toLowerCase();
-    const cls = this.preferredTheme === theme ? 'selected' : '';
-    return html`
-      <div class=${cls}>
-        <a @click=${this.setPreferredTheme}>
-          <mat-icon name=${icon} data-theme=${theme}></mat-icon>
-        </a>
-        ${themeTitle}
-      </div>
-    `;
-  }
-
-  private renderTimerChoice(show: boolean, icon: string) {
-    const cls = this.showTimer === show ? 'selected' : '';
-    return html`
-      <div class=${cls}>
-        <a @click=${this.setShowTimer}>
-          <mat-icon name=${icon} data-show=${show}></mat-icon>
-        </a>
-        ${show ? 'Show' : "Don't show"} the timer
-      </div>
-    `;
-  }
-
   @property({reflect: true}) theme: Theme = 'light';
-  @state() preferredTheme = getPreferredTheme();
-  @state() showTimer = getShowTimer();
 
   // The puzzle that's expanded, if there is one.
   @property() expandedPuzzle: string = '';
@@ -185,41 +95,6 @@ class HistoryView extends LitElement {
         }
       });
     }
-  }
-
-  private async newPuzzle(event: Event) {
-    const name = (event.target as HTMLElement).dataset.name!;
-    const spec = gameSpecByName(name);
-    const date = new Date();
-    const db = await this.db;
-    for (let counter = 1; true; ++counter) {
-      const puzzleId = PuzzleId.forSpec(spec, date, counter);
-      const cursor = await db
-        .transaction('games')
-        .store.openCursor(puzzleId.seed);
-      if (!cursor) {
-        this.dispatchEvent(
-          new CustomEvent('play-puzzle', {
-            detail: {puzzleId: puzzleId},
-            bubbles: true,
-            composed: true,
-          })
-        );
-        return;
-      }
-    }
-  }
-
-  private setPreferredTheme(event: Event) {
-    const theme = (event.target as HTMLElement).dataset.theme as ThemeOrAuto;
-    this.preferredTheme = theme;
-    setPreferredTheme(theme);
-  }
-
-  private setShowTimer(event: Event) {
-    const show = (event.target as HTMLElement).dataset.show === 'true';
-    this.showTimer = show;
-    setShowTimer(show);
   }
 
   private async loadGames() {

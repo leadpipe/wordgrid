@@ -6,6 +6,10 @@ import {customElement, property} from 'lit/decorators.js';
 import {GameState} from '../game/game-state';
 import {getShowTimer, setShowTimer} from './prefs';
 
+/**
+ * Displays the timer on the game page, and/or an icon for turning on or off the
+ * timer.
+ */
 @customElement('game-timer')
 export class GameTimer extends LitElement {
   static override styles = css`

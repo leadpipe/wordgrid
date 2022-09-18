@@ -2,6 +2,7 @@ import './events';
 import './game-timer';
 import './grid-view';
 import './mat-icon';
+import './meta-panel';
 import './solution-word';
 
 import {css, html, LitElement, PropertyValues} from 'lit';
@@ -245,19 +246,7 @@ export class GameView extends LitElement {
               `
             : ''}
         </div>
-        <div>
-          <a
-            href="https://github.com/leadpipe/wordgrid/issues/new"
-            target="_blank"
-            title="File a bug report"
-            ><mat-icon name="bug_report"></mat-icon></a
-          ><a
-            href="https://github.com/leadpipe/wordgrid/#readme"
-            target="_blank"
-            title="Help"
-            ><mat-icon name="help"></mat-icon
-          ></a>
-        </div>
+        <meta-panel></meta-panel>
       </div>
       <div id="summary">
         ${gameState

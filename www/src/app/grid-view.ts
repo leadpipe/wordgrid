@@ -1,7 +1,7 @@
 import './events';
 
 import {css, html, LitElement, PropertyValues} from 'lit';
-import {customElement, property, query, state} from 'lit/decorators.js';
+import {customElement, property, state} from 'lit/decorators.js';
 import {ref} from 'lit/directives/ref.js';
 import {PuzzleId} from '../game/puzzle-id';
 import {Loc, locAt} from '../game/loc';
