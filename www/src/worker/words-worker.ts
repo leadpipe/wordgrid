@@ -46,6 +46,22 @@ function makeGrid(
     };
   }
 
+  let answer = cache.get(m.seed);
+  if (!answer) {
+    answer = actuallyMakeGrid(m);
+    cache.set(m.seed, answer);
+    while (cache.size > MAX_CACHED) {
+      const seed = cache.keys().next().value;
+      cache.delete(seed);
+    }
+  }
+  return answer;
+}
+
+const MAX_CACHED = 100;
+const cache = new Map<string, GridResultMessage>();
+
+function actuallyMakeGrid(m: MakeGridMessage): GridResultMessage {
   const random = new wasm.JsRandom(m.seed);
   const grid = new wasm.Grid(words, m.size, random);
   const map: Map<string, string> = grid.findWords(words, m.minLength);
