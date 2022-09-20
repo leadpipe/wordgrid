@@ -90,13 +90,9 @@ export class LeadpipeWordgrid extends LitElement {
         --scrollbar-track-color: #333;
       }
 
-      dialog,
-      button {
+      dialog {
         background: var(--background);
         color: var(--text-color);
-      }
-
-      dialog {
         padding: 4px 4px 12px;
       }
 
@@ -136,7 +132,11 @@ export class LeadpipeWordgrid extends LitElement {
   override render() {
     return [
       html`
-        <dialog id="settings">
+        <dialog
+          id="settings"
+          @cancel=${this.settingsCanceled}
+          @keydown=${this.handleSettingsKey}
+        >
           <a id="close-settings" @click=${this.closeSettings} title="Close"
             ><mat-icon name="clear"></mat-icon
           ></a>
@@ -185,6 +185,7 @@ export class LeadpipeWordgrid extends LitElement {
             class="may-scroll"
             .puzzleId=${PuzzleId.fromSeed(this.puzzleSeed)}
             .resumeImmediately=${this.resumeImmediately}
+            .dialogShowing=${this.dialogShowing}
           ></game-view>
         `;
       case 'history':
@@ -205,7 +206,7 @@ export class LeadpipeWordgrid extends LitElement {
     const cls = this.preferredTheme === theme ? 'selected' : '';
     return html`
       <div class=${cls}>
-        <a @click=${this.setPreferredTheme} data-theme=${theme}>
+        <a @click=${this.setPreferredTheme} data-theme=${theme} tabindex="0">
           <mat-icon name=${icon}></mat-icon>
           ${themeTitle}
         </a>
@@ -217,7 +218,7 @@ export class LeadpipeWordgrid extends LitElement {
     const cls = this.showTimer === show ? 'selected' : '';
     return html`
       <div class=${cls}>
-        <a @click=${this.setShowTimer} data-show=${show}>
+        <a @click=${this.setShowTimer} data-show=${show} tabindex="0">
           <mat-icon name=${icon}></mat-icon>
           ${show ? 'Show' : "Don't show"} the timer
         </a>
@@ -238,6 +239,7 @@ export class LeadpipeWordgrid extends LitElement {
   @state() resumeImmediately = false;
   @state() preferredTheme = getPreferredTheme();
   @state() showTimer = getShowTimer();
+  @state() dialogShowing = false;
   @query('#settings') settingsDialog!: HTMLDialogElement;
 
   private readonly db = openWordgridDb();
@@ -329,10 +331,29 @@ export class LeadpipeWordgrid extends LitElement {
   }
 
   private handleShowSettings() {
+    this.dialogShowing = true;
     this.settingsDialog.showModal();
   }
 
+  private settingsCanceled() {
+    this.dialogShowing = false;
+  }
+
+  private handleSettingsKey(event: KeyboardEvent) {
+    switch (event.key) {
+      case 'Tab':
+      case 'Escape':
+        return;  // Allow the default handling for these keys.
+      case 'Enter':
+      case ' ':
+        (event.target as HTMLElement|null)?.click();  // Treat the same as a click.
+    }
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }
+
   private closeSettings() {
+    this.dialogShowing = false;
     this.settingsDialog.close();
   }
 
@@ -360,7 +381,7 @@ export class LeadpipeWordgrid extends LitElement {
   }
 
   private async newPuzzle(event: Event) {
-    this.settingsDialog.close();
+    this.closeSettings();
     const name = (event.target as HTMLElement).dataset.name!;
     const spec = gameSpecByName(name);
     const date = new Date();
