@@ -6,7 +6,6 @@ const workerPromise = import('./worker/words-worker.ts').catch(e =>
 );
 
 self.onmessage = async e => {
-  console.log('got a message event', e);
   const {handleToWorkerMessage} = await workerPromise;
   handleToWorkerMessage(self, e.data);
 };
