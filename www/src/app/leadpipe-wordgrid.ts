@@ -35,17 +35,21 @@ type Page = 'play' | 'history';
 
 const MIN_IDLE_TIME_MS = 5 * 60 * 1000;
 const REFRESH_POLL_TIME_MS = 60 * 60 * 1000;
-let previousPuzzleSeed = PuzzleId.daily().seed;
+const MAX_PROCESS_LIFETIME = 7 * 24 * 60 * 60 * 1000;
+const startTime = Date.now();
+let dailyPuzzleId = PuzzleId.daily();
 let pendingRefreshTimeout: number | undefined = undefined;
 function refreshDaily(root: LeadpipeWordgrid) {
   window.clearTimeout(pendingRefreshTimeout);
   // Check for the next day having arrived, and switch to its puzzle.
   const current = PuzzleId.daily();
-  if (current.seed > previousPuzzleSeed) {
+  if (current.seed > dailyPuzzleId.seed) {
     // It's a new day.  If enough time has passed since the last use of the app,
-    // make the switch.  Otherwise, postpone and try again later.
+    // attempt to reload, or just make the switch.  Otherwise, postpone and try
+    // again later.
     if (current.date > lastUsedPlus(MIN_IDLE_TIME_MS)) {
-      previousPuzzleSeed = current.seed;
+      dailyPuzzleId = current;
+      // Redirect to the new puzzle.
       root.dispatchEvent(
         new CustomEvent('play-puzzle', {
           detail: {puzzleId: current},
@@ -53,6 +57,11 @@ function refreshDaily(root: LeadpipeWordgrid) {
           composed: true,
         })
       );
+      // But if enough time has passed since this page first loaded, let's
+      // reload the app.
+      if (Date.now() - startTime > MAX_PROCESS_LIFETIME) {
+        location.replace(location.pathname);
+      }
     }
   }
   pendingRefreshTimeout = window.setTimeout(
@@ -347,10 +356,10 @@ export class LeadpipeWordgrid extends LitElement {
     switch (event.key) {
       case 'Tab':
       case 'Escape':
-        return;  // Allow the default handling for these keys.
+        return; // Allow the default handling for these keys.
       case 'Enter':
       case ' ':
-        (event.target as HTMLElement|null)?.click();  // Treat the same as a click.
+        (event.target as HTMLElement | null)?.click(); // Treat the same as a click.
     }
     event.preventDefault();
     event.stopImmediatePropagation();
