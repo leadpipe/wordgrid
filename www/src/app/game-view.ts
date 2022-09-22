@@ -27,11 +27,6 @@ import {renderCount, renderCounts, sleepMs} from './utils';
 import {noteUsage} from './usage';
 
 /**
- * Starts true, gets cleared when we've successfully received our first puzzle.
- */
-let loadingWords = true;
-
-/**
  * Number of pixels we tell the grid-view to pad itself.
  */
 const GRID_VIEW_PADDING = 10;
@@ -280,7 +275,7 @@ export class GameView extends LitElement {
           @words-selected=${this.wordsSelected}
         ></grid-view>
         <div id="below-grid">
-          ${loadingWords
+          ${this.loadingWords
             ? html`
                 <div></div>
                 <div>Loading words...</div>
@@ -369,6 +364,7 @@ export class GameView extends LitElement {
   @property() puzzleId: PuzzleId = PuzzleId.daily();
   @property() resumeImmediately = false;
   @property() dialogShowing = false;
+  @property() loadingWords = true;
 
   @state() private puzzle: GridResultMessage | null = null;
   private gameState: GameState | null = null;
@@ -462,7 +458,6 @@ export class GameView extends LitElement {
       this.gameState = new GameState(this.puzzleId, puzzle);
     }
     this.puzzle = puzzle;
-    loadingWords = false;
     if (this.gameState.isComplete) {
       this.redirectToHistory();
     } else if (this.resumeImmediately) {

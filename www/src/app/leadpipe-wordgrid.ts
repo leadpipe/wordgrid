@@ -8,6 +8,7 @@ import {customElement, property, query, state} from 'lit/decorators.js';
 import {gameSpecByName} from '../game/game-spec';
 import {PuzzleId} from '../game/puzzle-id';
 import {openWordgridDb} from '../game/wordgrid-db';
+import {requestPuzzle} from '../puzzle-service';
 import {Theme, ThemeOrAuto} from './types';
 import {
   getCurrentTheme,
@@ -186,6 +187,7 @@ export class LeadpipeWordgrid extends LitElement {
             .puzzleId=${PuzzleId.fromSeed(this.puzzleSeed)}
             .resumeImmediately=${this.resumeImmediately}
             .dialogShowing=${this.dialogShowing}
+            .loadingWords=${this.loadingWords}
           ></game-view>
         `;
       case 'history':
@@ -240,6 +242,7 @@ export class LeadpipeWordgrid extends LitElement {
   @state() preferredTheme = getPreferredTheme();
   @state() showTimer = getShowTimer();
   @state() dialogShowing = false;
+  @state() loadingWords = true;
   @query('#settings') settingsDialog!: HTMLDialogElement;
 
   private readonly db = openWordgridDb();
@@ -253,6 +256,7 @@ export class LeadpipeWordgrid extends LitElement {
     );
     this.addEventListener('show-settings', () => this.handleShowSettings());
     refreshDaily(this);
+    this.trackWordsLoading();
   }
 
   private readonly themeHandler = (event: CustomEvent<Theme>) => {
@@ -402,6 +406,11 @@ export class LeadpipeWordgrid extends LitElement {
         return;
       }
     }
+  }
+
+  private async trackWordsLoading() {
+    await requestPuzzle(dailyPuzzleId);
+    this.loadingWords = false;
   }
 }
 
