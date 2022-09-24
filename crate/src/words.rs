@@ -99,14 +99,9 @@ impl WordsBuilder {
         .add_line(std::str::from_utf8(&last_line).unwrap())
         .unwrap();
     }
-    let mut letters: Vec<char> = self.letter_counts.distinct_elements().copied().collect();
-    letters.sort_unstable();
-    let letter_dist = WeightedIndex::new(
-      letters
-        .iter()
-        .map(|letter| self.letter_counts.count_of(letter) as u32),
-    )
-    .unwrap();
+    let letters = self.letters();
+    let letter_dist =
+      WeightedIndex::new(letters.iter().map(|letter| self.letter_count(letter))).unwrap();
     Words {
       trie: self.trie,
       letters,
@@ -145,6 +140,27 @@ impl WordsBuilder {
       }
     }
     Ok(())
+  }
+}
+
+impl WordsBuilder {
+  /// Returns a sorted list of all the characters that appear in the words added
+  /// so far.
+  pub fn letters(&self) -> Vec<char> {
+    let mut letters: Vec<char> = self.letter_counts.distinct_elements().copied().collect();
+    letters.sort_unstable();
+    letters
+  }
+
+  /// Returns the number of times the given letter appears in the words added so
+  /// far.
+  pub fn letter_count(&self, letter: &char) -> u32 {
+    self.letter_counts.count_of(letter) as _
+  }
+
+  /// Returns the total number of letters that appear in all words added so far.
+  pub fn total_letter_count(&self) -> u32 {
+    self.letter_counts.len() as _
   }
 }
 
