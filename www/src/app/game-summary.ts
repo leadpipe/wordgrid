@@ -5,8 +5,9 @@ import './solution-word';
 
 import {css, html, LitElement, PropertyValues} from 'lit';
 import {customElement, property, state} from 'lit/decorators.js';
+import * as wasm from 'wordgrid-rust';
 import {requestPuzzle} from '../puzzle-service';
-import {GameRecord} from '../game/wordgrid-db';
+import {GameRecord, isWordsComplete} from '../game/wordgrid-db';
 import {GameState} from '../game/game-state';
 import {Path} from '../game/paths';
 import {PuzzleId} from '../game/puzzle-id';
@@ -97,7 +98,28 @@ export class GameSummary extends LitElement {
             </div>
             <div>
               ${game.isComplete
-                ? 'Complete'
+                ? html`
+                    Complete
+                    ${expanded
+                      ? html`<div>
+                          Share as
+                          <input
+                            id="share-as"
+                            type="text"
+                            value=${this.shareAs}
+                            maxlength="50"
+                            placeholder="Name/nickname"
+                            @input=${this.handleShareAsUpdated}
+                          />
+                          ${this.shareAs
+                            ? html`<a @click=${this.shareGame} title="Share">
+                                  <mat-icon name="share"></mat-icon>
+                                </a>
+                                <input id="share-as-url" readonly /> `
+                            : ''}
+                        </div>`
+                      : ''}
+                  `
                 : html`
                     Ongoing
                     <a @click=${this.resumeGame} title="Resume play">
@@ -204,6 +226,7 @@ export class GameSummary extends LitElement {
   @property() record: GameRecord | null = null;
 
   @state() game: GameState | null = null;
+  @state() shareAs = '';
 
   protected override updated(changedProperties: PropertyValues): void {
     if (changedProperties.has('record')) {
@@ -237,6 +260,32 @@ export class GameSummary extends LitElement {
     if (!record) return;
     const puzzle = await requestPuzzle(PuzzleId.fromSeed(record.puzzleId));
     this.game = GameState.fromDbRecord(record, puzzle);
+  }
+
+  private handleShareAsUpdated(event: InputEvent) {
+    this.shareAs = (event.target as HTMLInputElement).value;
+  }
+
+  private shareGame() {
+    const urlElement = this.shadowRoot?.querySelector(
+      '#share-as-url'
+    ) as HTMLInputElement | null;
+    const {game, shareAs} = this;
+    if (urlElement && game) {
+      const {wordsToStore} = game;
+      if (!isWordsComplete(wordsToStore)) return;
+      const random = new wasm.JsRandom(`${game.puzzleId.seed}:${shareAs}`);
+      const firstBits = wasm.obfuscate(wordsToStore.firstBits, random);
+      let url = `${location.origin}${location.pathname}#share/${
+        game.puzzleId.seed
+      }/${encodeURIComponent(shareAs)}/${firstBits}`;
+      if (wordsToStore.secondBits) {
+        url += `/${wasm.obfuscate(wordsToStore.secondBits, random)}`;
+      }
+      urlElement.value = url;
+      urlElement.select();
+      random.free();
+    }
   }
 
   private resumeGame() {
