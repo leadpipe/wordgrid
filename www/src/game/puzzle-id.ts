@@ -11,6 +11,22 @@ import {
   randomGameSpec,
 } from './game-spec';
 
+/**
+ * Identifies a Wordgrid puzzle.  A puzzle ID consists of:
+ * - the version of the words file (`N` in words-vN.txt)
+ * - a calendar date, in ISO YYYY-MM-DD form
+ * - one of the standard Wordgrid game sizes (4, 5, 6 or S, M, L)
+ * - an integer counter, generally starting at 1
+ *
+ * In string form, these parts are joined together with colons separating the
+ * parts.  For example: `1:1776-07-04:5:2`.  This is Medium puzzle #2 of July
+ * 4th, 1776 (using v1 of the words file).
+ *
+ * Note that in the code we use the words `puzzleId` and `seed` interchangeably
+ * to refer to this string form of puzzle IDs.  And we also use `puzzleId` to
+ * refer to these PuzzleId objects.  The term `seed` comes about because we use
+ * the ID string to seed our random number generator, to create the puzzle.
+ */
 export class PuzzleId {
   constructor(
     readonly version: number,
