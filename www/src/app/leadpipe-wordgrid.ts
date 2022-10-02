@@ -49,12 +49,13 @@ let pendingRefreshTimeout: number | undefined = undefined;
 async function refreshDaily(root: LeadpipeWordgrid) {
   window.clearTimeout(pendingRefreshTimeout);
   // Check for the next day having arrived, and switch to its puzzle.
+  const checkTime = Date.now();
   const current = PuzzleId.daily();
   if (current.seed > dailyPuzzleId.seed) {
     // It's a new day.  If enough time has passed since the last use of the app,
     // attempt to reload, or just make the switch.  Otherwise, postpone and try
     // again later.
-    if (current.date > lastUsedPlus(MIN_IDLE_TIME_MS)) {
+    if (checkTime > lastUsedPlus(MIN_IDLE_TIME_MS)) {
       dailyPuzzleId = current;
       // Clean up the DB, then redirect to the new puzzle.
       await root.cleanDb();

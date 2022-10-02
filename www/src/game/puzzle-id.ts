@@ -12,23 +12,15 @@ import {
 } from './game-spec';
 
 export class PuzzleId {
-  private dateTimestamp: number;
-
   constructor(
     readonly version: number,
-    date: Date,
+    readonly dateString: string,
     readonly spec: GameSpec,
     readonly counter: number
   ) {
-    this.dateTimestamp = date.getTime();
-  }
-
-  get date(): Date {
-    return new Date(this.dateTimestamp);
-  }
-
-  get dateString(): string {
-    return toIsoDateString(this.date);
+    if (!isValidDateString(dateString)) {
+      throw new Error(`Invalid date string '${dateString}'`);
+    }
   }
 
   /**
@@ -44,7 +36,12 @@ export class PuzzleId {
    * @returns The next puzzle ID for the same date, version, and game size.
    */
   next(): PuzzleId {
-    return new PuzzleId(this.version, this.date, this.spec, 1 + this.counter);
+    return new PuzzleId(
+      this.version,
+      this.dateString,
+      this.spec,
+      1 + this.counter
+    );
   }
 
   /**
@@ -83,7 +80,7 @@ export class PuzzleId {
    * @returns The specified puzzle ID.
    */
   static forSpec(spec: GameSpec, date = new Date(), counter = 1) {
-    return new PuzzleId(WORDS_VERSION, date, spec, counter);
+    return new PuzzleId(WORDS_VERSION, toIsoDateString(date), spec, counter);
   }
 
   /**
@@ -96,20 +93,18 @@ export class PuzzleId {
     const parts = seed.split(':');
     if (parts.length === 4) {
       const version = Number(parts[0]);
-      const dateParts = parts[1].split('-').map(Number);
+      const dateString = parts[1];
       const size = Number(parts[2]);
       const counter = Number(parts[3]);
       if (
         !isNaN(version) &&
-        dateParts.length === 3 &&
-        !dateParts.some(isNaN) &&
+        isValidDateString(dateString) &&
         isValidGridSize(size) &&
         !isNaN(counter)
       ) {
         return new PuzzleId(
           version,
-          // This is the constructor we need to use for a _local_ date:
-          new Date(dateParts[0], dateParts[1] - 1, dateParts[2]),
+          dateString,
           gameSpecByGridSize(size)!,
           counter
         );
@@ -129,4 +124,22 @@ export function toIsoDateString(date: Date): string {
   return `${String(date.getFullYear()).padStart(4, '0')}-${String(
     date.getMonth() + 1
   ).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+/**
+ * Tells whether the given string is a valid date string, in ISO format
+ * YYYY-MM-DD.  It verifies that parsing the string produces a date whose ISO
+ * date string is identical to the given string.
+ * @param dateString The date string to test, in ISO format YYYY-MM-DD.
+ * @returns whether parsing it to a date and converting it to ISO form yields
+ * the same string.
+ */
+export function isValidDateString(dateString: string): boolean {
+  const dateParts = dateString.split('-').map(Number);
+  return (
+    dateParts.length === 3 &&
+    !dateParts.some(isNaN) &&
+    toIsoDateString(new Date(dateParts[0], dateParts[1] - 1, dateParts[2])) ===
+      dateString
+  );
 }
