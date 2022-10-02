@@ -235,7 +235,7 @@ export class GameView extends LitElement {
               `
             : ''}
         </div>
-        <meta-panel></meta-panel>
+        <div><meta-panel></meta-panel></div>
       </div>
       <div id="summary">
         ${gameState
