@@ -114,9 +114,6 @@ export class GameView extends LitElement {
         text-align: right;
       }
 
-      .opt-break {
-      }
-
       #found {
         min-height: 100px;
         column-width: 6em;
@@ -179,9 +176,6 @@ export class GameView extends LitElement {
         .opt-break {
           display: none;
         }
-      }
-
-      .not-a-word {
       }
 
       .impossible-word {
@@ -257,7 +251,7 @@ export class GameView extends LitElement {
               </div>
               <div>
                 ${renderCounts(gameState.getWordCounts(), 'word')},
-                <br class="opt-break" />
+                <br />
                 ${renderCounts(gameState?.getWordPoints(), 'point')}.
               </div>
             `
@@ -350,8 +344,8 @@ export class GameView extends LitElement {
             <div>
               <solution-word
                 word=${word}
-                .category=${this.puzzle!.words.get(word)!}
                 theme=${this.theme}
+                .category=${this.puzzle!.words.get(word)!}
               ></solution-word>
             </div>
           `

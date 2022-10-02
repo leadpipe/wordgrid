@@ -82,8 +82,8 @@ class HistoryView extends LitElement {
   }
 
   override disconnectedCallback(): void {
-    super.disconnectedCallback();
     this.gameRecordsByDate = null;
+    super.disconnectedCallback();
   }
 
   protected override updated(changedProperties: PropertyValues): void {
