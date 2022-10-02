@@ -62,7 +62,7 @@ export interface WordgridDb extends DBSchema {
     indexes: {
       'by-person': string;
       'by-puzzle-id': string;
-    }
+    };
   };
 }
 
@@ -85,4 +85,16 @@ export function openWordgridDb(): Promise<IDBPDatabase<WordgridDb>> {
       sharesStore.createIndex('by-puzzle-id', 'puzzleId');
     },
   });
+}
+
+/**
+ * Tells whether the given optional game record exists and holds a complete
+ * game.
+ * @param record The database record to check.
+ * @returns true if the record exists and represents a complete game
+ */
+export function isGameComplete(
+  record: GameRecord | null | undefined
+): record is GameRecord {
+  return !!record && isWordsComplete(record.wordsFound);
 }
