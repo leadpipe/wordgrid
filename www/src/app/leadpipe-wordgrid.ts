@@ -6,8 +6,11 @@ import './mat-icon';
 import {css, html, LitElement, TemplateResult} from 'lit';
 import {customElement, property, query, state} from 'lit/decorators.js';
 import {gameSpecByName} from '../game/game-spec';
-import {PuzzleId} from '../game/puzzle-id';
-import {openWordgridDb} from '../game/wordgrid-db';
+import {PuzzleId, toIsoDateString} from '../game/puzzle-id';
+import {
+  isGameComplete,
+  openWordgridDb,
+} from '../game/wordgrid-db';
 import {requestPuzzle} from '../puzzle-service';
 import {Theme, ThemeOrAuto} from './types';
 import {
@@ -33,13 +36,17 @@ import {ensureExhaustiveSwitch} from './utils';
 
 type Page = 'play' | 'history';
 
-const MIN_IDLE_TIME_MS = 5 * 60 * 1000;
-const REFRESH_POLL_TIME_MS = 60 * 60 * 1000;
-const MAX_PROCESS_LIFETIME = 7 * 24 * 60 * 60 * 1000;
-const startTime = Date.now();
+const SECOND_MS = 1000;
+const MINUTE_MS = 60 * SECOND_MS;
+const HOUR_MS = 60 * MINUTE_MS;
+const DAY_MS = 24 * HOUR_MS;
+const MIN_IDLE_TIME_MS = 5 * MINUTE_MS;
+const REFRESH_POLL_TIME_MS = HOUR_MS;
+const MAX_PROCESS_LIFETIME = 7 * DAY_MS;
+const processStartTime = Date.now();
 let dailyPuzzleId = PuzzleId.daily();
 let pendingRefreshTimeout: number | undefined = undefined;
-function refreshDaily(root: LeadpipeWordgrid) {
+async function refreshDaily(root: LeadpipeWordgrid) {
   window.clearTimeout(pendingRefreshTimeout);
   // Check for the next day having arrived, and switch to its puzzle.
   const current = PuzzleId.daily();
@@ -49,7 +56,8 @@ function refreshDaily(root: LeadpipeWordgrid) {
     // again later.
     if (current.date > lastUsedPlus(MIN_IDLE_TIME_MS)) {
       dailyPuzzleId = current;
-      // Redirect to the new puzzle.
+      // Clean up the DB, then redirect to the new puzzle.
+      await root.cleanDb();
       root.dispatchEvent(
         new CustomEvent('play-puzzle', {
           detail: {puzzleId: current},
@@ -59,7 +67,7 @@ function refreshDaily(root: LeadpipeWordgrid) {
       );
       // But if enough time has passed since this page first loaded, let's
       // reload the app.
-      if (Date.now() - startTime > MAX_PROCESS_LIFETIME) {
+      if (Date.now() - processStartTime > MAX_PROCESS_LIFETIME) {
         location.replace(location.pathname);
       }
     }
@@ -258,14 +266,14 @@ export class LeadpipeWordgrid extends LitElement {
 
   constructor() {
     super();
-    this.interpretHash();
     this.addEventListener('play-puzzle', event => this.handlePlayPuzzle(event));
-    this.addEventListener('show-history', event =>
-      this.handleShowHistory(event)
-    );
+    this.addEventListener('show-history', e => this.handleShowHistory(e));
     this.addEventListener('show-settings', () => this.handleShowSettings());
-    refreshDaily(this);
+
     this.trackWordsLoading();
+    this.startApp();
+
+    refreshDaily(this);
   }
 
   private readonly themeHandler = (event: CustomEvent<Theme>) => {
@@ -298,18 +306,28 @@ export class LeadpipeWordgrid extends LitElement {
     document.removeEventListener('visibilitychange', this.dailyPuzzleUpdater);
   }
 
-  private interpretHash() {
+  /**
+   * Treats the hash portion of the current location as if it was a URL path and
+   * query, and splits it into three pieces: the page (meaning the first path
+   * segment), any path segments that follow the page, and any query parameters.
+   */
+  private parseHash(): [string, string[], URLSearchParams] {
     const {hash} = location;
-    let page = '';
-    let puzzleSeed = '';
     if (hash.startsWith('#')) {
-      // Treat the hash like its own URL relative to the base.  Currently we
-      // only use the path portion.
-      const {pathname} = new URL(`${location.origin}/${hash.substring(1)}`);
+      // Treat the hash like its own URL relative to the base.
+      const {pathname, searchParams} = new URL(
+        `${location.origin}/${hash.substring(1)}`
+      );
       const parts = pathname.substring(1).split('/');
-      page = parts[0];
-      puzzleSeed = parts[1] ?? '';
+      const page = parts.shift() ?? '';
+      return [page, parts, searchParams];
     }
+    return ['', [], new URLSearchParams()];
+  }
+
+  private interpretHash() {
+    let [page, parts, _params] = this.parseHash();
+    let puzzleSeed = parts[0] ?? '';
     if (page !== 'history') {
       page = 'play';
     }
@@ -420,6 +438,71 @@ export class LeadpipeWordgrid extends LitElement {
   private async trackWordsLoading() {
     await requestPuzzle(dailyPuzzleId);
     this.loadingWords = false;
+  }
+
+  private async startApp() {
+    await this.cleanDb();
+    let [page, parts, _params] = this.parseHash();
+    const puzzleSeed = parts[0] ?? '';
+    const dailyId = PuzzleId.daily();
+    const dailySeed = dailyId.seed;
+    if (page === 'history' || (page === 'play' && puzzleSeed)) {
+      this.page = page;
+      this.puzzleSeed = puzzleSeed;
+      this.updateLocation();
+      return;
+    }
+    const db = await this.db;
+    const dailyRecord = await db.get('games', dailySeed);
+    const mostRecentCursor = await db
+      .transaction('games')
+      .store.index('by-last-played')
+      .openCursor(null, 'prev');
+    this.page = 'play';
+    const mostRecentSeed = mostRecentCursor?.value.puzzleId;
+    if (
+      mostRecentSeed &&
+      (isGameComplete(dailyRecord) ||
+        PuzzleId.fromSeed(mostRecentSeed).dateString === dailyId.dateString)
+    ) {
+      this.puzzleSeed = mostRecentSeed;
+    } else {
+      this.puzzleSeed = dailySeed;
+    }
+    this.updateLocation();
+  }
+
+  /**
+   * Discards games that are too old.  Keeps at least 10, and at most 100 or 30
+   * days' worth, whatever is less.
+   */
+  async cleanDb() {
+    const db = await this.db;
+    const ix = db.transaction('games').store.index('by-last-played');
+    let count = 0;
+    const minDateString = toIsoDateString(new Date(Date.now() - 30 * DAY_MS));
+    const toDelete = [];
+    for await (const cursor of ix.iterate(null, 'prev')) {
+      ++count;
+      if (
+        count <= 10 ||
+        (count <= 100 && toIsoDateString(cursor.key) >= minDateString)
+      ) {
+        continue;
+      }
+      toDelete.push(cursor.value.puzzleId);
+    }
+    for (const puzzleId of toDelete) {
+      await db.delete('games', puzzleId);
+      const shareKeys = await db.getAllKeysFromIndex(
+        'shares',
+        'by-puzzle-id',
+        puzzleId
+      );
+      for (const key of shareKeys) {
+        await db.delete('shares', key);
+      }
+    }
   }
 }
 
