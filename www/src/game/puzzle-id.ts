@@ -1,4 +1,4 @@
-import * as wasm from '../../../crate/pkg/leadpipe_wordgrid';
+import * as wasm from 'wordgrid-rust';
 import {
   MakeGridMessage,
   ToWorkerMessageType,

@@ -1,4 +1,4 @@
-import * as wasm from '../../../crate/pkg/leadpipe_wordgrid';
+import * as wasm from 'wordgrid-rust';
 import {GridResultMessage} from '../worker/worker-types';
 import {Path, PathFinder} from './paths';
 import {PuzzleId} from './puzzle-id';

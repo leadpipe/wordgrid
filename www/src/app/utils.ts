@@ -1,5 +1,5 @@
 import {html} from 'lit';
-import * as wasm from '../../../crate/pkg/leadpipe_wordgrid';
+import * as wasm from 'wordgrid-rust';
 import {Counts} from '../game/types';
 
 export function renderCategory(category: wasm.WordCategory) {
