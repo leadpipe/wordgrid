@@ -177,16 +177,17 @@ export class GameSummary extends LitElement {
                           ${cats.map(
                             cat => html`
                               <div class="cat">${renderCategory(cat)}</div>
-                              ${[...game.getFoundWords(cat)]
-                                .sort()
-                                .map(
-                                  word => html`
-                                    <div>
-                                      <solution-word word=${word}
+                              ${[...game.getFoundWords(cat)].sort().map(
+                                word => html`
+                                  <div>
+                                    <solution-word
+                                      word=${word}
                                       theme=${this.theme}
-                                    </div>
-                                  `
-                                )}
+                                    >
+                                    </solution-word>
+                                  </div>
+                                `
+                              )}
                             `
                           )}
                         </div>
