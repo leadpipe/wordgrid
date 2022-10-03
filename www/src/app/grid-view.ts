@@ -412,7 +412,10 @@ export class GridView extends LitElement {
     let span = Math.min(rect.width, rect.height);
     span -= 2 * padding; // Padding is handled by centering the canvas.
     let sideSpan = devicePixelRatio * span;
-    const cellSpan = (this._cellSpan = Math.floor((sideSpan - size) / size));
+    const cellSpan = (this._cellSpan = Math.max(
+      0,
+      Math.floor((sideSpan - size) / size)
+    ));
     this.sideSpan = size * cellSpan;
 
     const centers = [];
