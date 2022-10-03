@@ -98,3 +98,30 @@ export function isGameComplete(
 ): record is GameRecord {
   return !!record && isWordsComplete(record.wordsFound);
 }
+
+/**
+ * Tells whether two optional bitmaps are identical.
+ */
+function bitmapsAreEqual(a?: Uint8Array, b?: Uint8Array): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  if (a.length !== b.length) return false;
+  for (let i = 0, c = a.length; i < c; ++i) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+/**
+ * Tells whether a `wordsFound` value matches a `WordsComplete` value.
+ */
+export function sameWordsWereFound(
+  a: WordsInProgress | WordsComplete,
+  b: WordsComplete
+): boolean {
+  if (!isWordsComplete(a)) return false;
+  return (
+    bitmapsAreEqual(a.firstBits, b.firstBits) &&
+    bitmapsAreEqual(a.secondBits, b.secondBits)
+  );
+}

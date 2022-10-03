@@ -5,11 +5,13 @@ import './mat-icon';
 
 import {css, html, LitElement, TemplateResult} from 'lit';
 import {customElement, property, query, state} from 'lit/decorators.js';
+import * as wasm from 'wordgrid-rust';
 import {gameSpecByName} from '../game/game-spec';
 import {PuzzleId, toIsoDateString} from '../game/puzzle-id';
 import {
   isGameComplete,
   openWordgridDb,
+  sameWordsWereFound,
 } from '../game/wordgrid-db';
 import {requestPuzzle} from '../puzzle-service';
 import {Theme, ThemeOrAuto} from './types';
@@ -453,24 +455,85 @@ export class LeadpipeWordgrid extends LitElement {
       this.updateLocation();
       return;
     }
-    const db = await this.db;
-    const dailyRecord = await db.get('games', dailySeed);
-    const mostRecentCursor = await db
-      .transaction('games')
-      .store.index('by-last-played')
-      .openCursor(null, 'prev');
-    this.page = 'play';
-    const mostRecentSeed = mostRecentCursor?.value.puzzleId;
-    if (
-      mostRecentSeed &&
-      (isGameComplete(dailyRecord) ||
-        PuzzleId.fromSeed(mostRecentSeed).dateString === dailyId.dateString)
-    ) {
-      this.puzzleSeed = mostRecentSeed;
+    if (page === 'share') {
+      this.puzzleSeed = puzzleSeed;
+      const name = decodeURIComponent(parts[1]);
+      await this.importShare(puzzleSeed, name, parts[2], parts[3]);
     } else {
-      this.puzzleSeed = dailySeed;
+      const db = await this.db;
+      const dailyRecord = await db.get('games', dailySeed);
+      const mostRecentCursor = await db
+        .transaction('games')
+        .store.index('by-last-played')
+        .openCursor(null, 'prev');
+      const mostRecentSeed = mostRecentCursor?.value.puzzleId;
+      if (
+        mostRecentSeed &&
+        (isGameComplete(dailyRecord) ||
+          PuzzleId.fromSeed(mostRecentSeed).dateString === dailyId.dateString)
+      ) {
+        this.puzzleSeed = mostRecentSeed;
+      } else {
+        this.puzzleSeed = dailySeed;
+      }
     }
+    this.page = 'play';
     this.updateLocation();
+  }
+
+  private async importShare(
+    puzzleSeed: string,
+    name: string,
+    obfuscatedFirstBits: string,
+    obfuscatedSecondBits?: string
+  ) {
+    const db = await this.db;
+    const random = new wasm.JsRandom(`${puzzleSeed}:${name}`);
+    try {
+      const firstBits = wasm.deobsuscate(obfuscatedFirstBits, random);
+      const secondBits = obfuscatedSecondBits
+        ? wasm.deobsuscate(obfuscatedSecondBits, random)
+        : undefined;
+      const wordsShared = {firstBits, secondBits};
+
+      const myRecord = await db.get('games', puzzleSeed);
+      if (myRecord && sameWordsWereFound(myRecord.wordsFound, wordsShared)) {
+        alert(
+          `${name}'s share of ${puzzleSeed} is identical to your game.`
+        );
+        return;
+      }
+
+      const ix = db.transaction('shares').store.index('by-puzzle-id');
+      let already = null;
+      for await (const cursor of ix.iterate(puzzleSeed)) {
+        if (sameWordsWereFound(cursor.value.wordsFound, wordsShared)) {
+          already = cursor.value.person;
+          break;
+        }
+      }
+      if (already === name) {
+        alert(`You've already imported ${name}'s share of ${puzzleSeed}.`);
+      } else if (already !== null) {
+        alert(
+          `You've already imported ${name}'s share of ${puzzleSeed}, under the name '${already}'.`
+        );
+      } else {
+        await db.put('shares', {
+          person: name,
+          puzzleId: puzzleSeed,
+          wordsFound: {firstBits, secondBits},
+        });
+        alert(`Successfully imported ${name}'s share of ${puzzleSeed}.`);
+      }
+    } catch (e) {
+      console.log('Bad share URL', location, e);
+      alert(
+        `Unable to import ${name}'s share of ${puzzleSeed}.  Did it get truncated?`
+      );
+    } finally {
+      random.free();
+    }
   }
 
   /**
