@@ -255,7 +255,7 @@ export class LeadpipeWordgrid extends LitElement {
   @property({reflect: true}) theme: Theme = getCurrentTheme();
 
   @state() page: Page = 'play';
-  @state() puzzleSeed: string = '';
+  @state() puzzleSeed: string = dailyPuzzleId.seed;
   @state() resumeImmediately = false;
   @state() preferredTheme = getPreferredTheme();
   @state() showTimer = getShowTimer();
