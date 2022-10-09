@@ -439,17 +439,17 @@ export class GameView extends LitElement {
       );
     } else {
       // It's a valid puzzle: use it.
-      this.loadPuzzle(puzzle);
+      this.loadPuzzle(puzzle, puzzleId);
     }
   }
 
-  private async loadPuzzle(puzzle: GridResultMessage) {
+  private async loadPuzzle(puzzle: GridResultMessage, puzzleId: PuzzleId) {
     const db = await this.db;
-    const record = await db.get('games', this.puzzleId.seed);
+    const record = await db.get('games', puzzle.message.seed);
     if (record) {
       this.gameState = GameState.fromDbRecord(record, puzzle);
     } else {
-      this.gameState = new GameState(this.puzzleId, puzzle);
+      this.gameState = new GameState(puzzleId, puzzle);
     }
     this.puzzle = puzzle;
     if (this.gameState.isComplete) {
