@@ -26,12 +26,13 @@ pub fn obfuscate(bytes: &[u8], rng: &mut JsRandom) -> String {
 /// generator (which must have the same initial state as the one passed to
 /// `obfuscate`).
 ///
-/// Panics on input that can't be decoded.
+/// Returns an error on input that can't be decoded.
 #[wasm_bindgen]
-pub fn deobsuscate(input: String, rng: &mut JsRandom) -> Vec<u8> {
+pub fn deobfuscate(input: String, rng: &mut JsRandom) -> Result<Vec<u8>, String> {
   let mut sum = Wrapping(0u8);
-  let mut xored_bytes = decode_config(input, URL_SAFE_NO_PAD).unwrap();
-  let check = xored_bytes.pop().unwrap();
+  let mut xored_bytes = decode_config(input, URL_SAFE_NO_PAD)
+    .map_err(|err| format!("Base64 decode error {:?}", err))?;
+  let check = xored_bytes.pop().ok_or("Missing check byte")?;
   let encoded: Vec<u8> = xored_bytes
     .iter()
     .map(|&b| {
@@ -40,8 +41,11 @@ pub fn deobsuscate(input: String, rng: &mut JsRandom) -> Vec<u8> {
       orig
     })
     .collect();
-  assert!(check == sum.0 ^ rng.next_byte(), "Check byte mismatch");
-  run_length_decode(encoded.as_slice()).unwrap()
+  if check != sum.0 ^ rng.next_byte() {
+    Err("Check byte mismatch".to_string())
+  } else {
+    run_length_decode(encoded.as_slice())
+  }
 }
 
 /// Applies a super simple run-length encoding scheme to the given bytes.  We
@@ -142,7 +146,18 @@ mod tests {
     let input = vec![1, 2, 3, 4];
     let string = obfuscate(input.as_slice(), &mut JsRandom::new("seed"));
     assert_eq!(string.len(), 10); // ceil((4 + 2 + 1) * 8 / 6)
-    let output = deobsuscate(string, &mut JsRandom::new("seed"));
+    let output = deobfuscate(string, &mut JsRandom::new("seed")).unwrap();
+    assert_eq!(input, output);
+  }
+
+  #[parameterized]
+  #[case(vec![])]
+  #[case(vec![254, 123, 62, 236])]
+  #[case(vec![240, 0, 0, 0, 0, 224, 0, 96, 0, 0, 0, 0, 0, 0, 240, 48, 0, 0, 0, 0, 0, 240, 80, 128, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 120, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 192, 1, 0, 0, 192, 125, 0])]
+  fn test_round_trips(input: Vec<u8>) {
+    let string = obfuscate(input.as_slice(), &mut JsRandom::new("1:2022-10-01:4:1:rle"));
+    println!("{}", string);
+    let output = deobfuscate(string, &mut JsRandom::new("1:2022-10-01:4:1:rle")).unwrap();
     assert_eq!(input, output);
   }
 
@@ -151,25 +166,25 @@ mod tests {
   fn test_failed_round_trip() {
     let input = vec![1, 2, 3, 4, 5];
     let string = obfuscate(input.as_slice(), &mut JsRandom::new("seed"));
-    deobsuscate(string, &mut JsRandom::new("different seed"));
+    deobfuscate(string, &mut JsRandom::new("different seed")).unwrap();
   }
 
   #[test]
   #[should_panic(expected = "InvalidLastSymbol")]
   fn test_bad_deobfuscate_input_padding() {
-    deobsuscate("abcdef==".to_string(), &mut JsRandom::new("seed"));
+    deobfuscate("abcdef==".to_string(), &mut JsRandom::new("seed")).unwrap();
   }
 
   #[test]
   #[should_panic(expected = "InvalidLength")]
   fn test_bad_deobfuscate_input_length() {
-    deobsuscate("abcde".to_string(), &mut JsRandom::new("seed"));
+    deobfuscate("abcde".to_string(), &mut JsRandom::new("seed")).unwrap();
   }
 
   #[test]
   #[should_panic(expected = "InvalidByte")]
   fn test_bad_deobfuscate_input_alphabet() {
-    deobsuscate("ab+/".to_string(), &mut JsRandom::new("seed"));
+    deobfuscate("ab+/".to_string(), &mut JsRandom::new("seed")).unwrap();
   }
 
   #[parameterized]

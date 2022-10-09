@@ -488,51 +488,51 @@ export class LeadpipeWordgrid extends LitElement {
     obfuscatedSecondBits?: string
   ) {
     const db = await this.db;
+    let wordsShared;
     const random = new wasm.JsRandom(`${puzzleSeed}:${name}`);
     try {
-      const firstBits = wasm.deobsuscate(obfuscatedFirstBits, random);
+      const firstBits = wasm.deobfuscate(obfuscatedFirstBits, random);
       const secondBits = obfuscatedSecondBits
-        ? wasm.deobsuscate(obfuscatedSecondBits, random)
+        ? wasm.deobfuscate(obfuscatedSecondBits, random)
         : undefined;
-      const wordsShared = {firstBits, secondBits};
-
-      const myRecord = await db.get('games', puzzleSeed);
-      if (myRecord && sameWordsWereFound(myRecord.wordsFound, wordsShared)) {
-        alert(
-          `${name}'s share of ${puzzleSeed} is identical to your game.`
-        );
-        return;
-      }
-
-      const ix = db.transaction('shares').store.index('by-puzzle-id');
-      let already = null;
-      for await (const cursor of ix.iterate(puzzleSeed)) {
-        if (sameWordsWereFound(cursor.value.wordsFound, wordsShared)) {
-          already = cursor.value.person;
-          break;
-        }
-      }
-      if (already === name) {
-        alert(`You've already imported ${name}'s share of ${puzzleSeed}.`);
-      } else if (already !== null) {
-        alert(
-          `You've already imported ${name}'s share of ${puzzleSeed}, under the name '${already}'.`
-        );
-      } else {
-        await db.put('shares', {
-          person: name,
-          puzzleId: puzzleSeed,
-          wordsFound: {firstBits, secondBits},
-        });
-        alert(`Successfully imported ${name}'s share of ${puzzleSeed}.`);
-      }
+      wordsShared = {firstBits, secondBits};
     } catch (e) {
       console.log('Bad share URL', location, e);
       alert(
         `Unable to import ${name}'s share of ${puzzleSeed}.  Did it get truncated?`
       );
+      return;
     } finally {
       random.free();
+    }
+
+    const myRecord = await db.get('games', puzzleSeed);
+    if (myRecord && sameWordsWereFound(myRecord.wordsFound, wordsShared)) {
+      alert(`${name}'s share of ${puzzleSeed} is identical to your game.`);
+      return;
+    }
+
+    const ix = db.transaction('shares').store.index('by-puzzle-id');
+    let already = null;
+    for await (const cursor of ix.iterate(puzzleSeed)) {
+      if (sameWordsWereFound(cursor.value.wordsFound, wordsShared)) {
+        already = cursor.value.person;
+        break;
+      }
+    }
+    if (already === name) {
+      alert(`You've already imported ${name}'s share of ${puzzleSeed}.`);
+    } else if (already !== null) {
+      alert(
+        `You've already imported ${name}'s share of ${puzzleSeed}, under the name '${already}'.`
+      );
+    } else {
+      await db.put('shares', {
+        person: name,
+        puzzleId: puzzleSeed,
+        wordsFound: wordsShared,
+      });
+      alert(`Successfully imported ${name}'s share of ${puzzleSeed}.`);
     }
   }
 
