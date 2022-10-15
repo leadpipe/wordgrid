@@ -16,6 +16,22 @@ export const DARK_BLUE_TRANSPARENT = css`
 
 export const BOTH_THEMES_BORDER = css`#808080`;
 
+export const HISTORY_PADDING_PX = 8;
+
+/**
+ * Include this in a component's styles, then attach class="icon-button" to
+ * buttons to get the right styling for buttons containing <mat-icon>s.
+ */
+export const ICON_BUTTON_CLASS = css`
+  .icon-button {
+    color: inherit;
+    background: inherit;
+    border: inherit;
+    padding: 0;
+    cursor: pointer;
+  }
+`;
+
 /**
  * Include this in a component's styles, then attach class="may-scroll" to get
  * the right styling for scrollbars.
