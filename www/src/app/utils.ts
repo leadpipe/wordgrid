@@ -1,6 +1,10 @@
+import {IDBPDatabase} from 'idb';
 import {html} from 'lit';
 import * as wasm from 'wordgrid-rust';
+import {GameState} from '../game/game-state';
 import {Counts} from '../game/types';
+import {WordgridDb} from '../game/wordgrid-db';
+import {noteUsage} from './usage';
 
 export function renderCategory(category: wasm.WordCategory) {
   let result = wasm.WordCategory[category];
@@ -41,4 +45,20 @@ export function sleepMs(ms: number): Promise<void> {
  */
 export function ensureExhaustiveSwitch(value: never): never {
   throw new Error(value);
+}
+
+/**
+ * Saves the given game to the database.
+ * @param db The indexed database.
+ * @param game The game to save.
+ */
+export async function saveGame(db: IDBPDatabase<WordgridDb>, game: GameState) {
+  const lastPlayed = game.lastPlayed || new Date();
+  noteUsage();
+  await db.put('games', {
+    puzzleId: game.puzzleId.seed,
+    lastPlayed,
+    elapsedMs: game.elapsedMs,
+    wordsFound: game.wordsToStore,
+  });
 }
