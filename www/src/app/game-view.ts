@@ -23,8 +23,7 @@ import {
 } from './prefs';
 import {MAY_SCROLL_CLASS} from './styles';
 import {Theme, ThemeOrAuto} from './types';
-import {renderCount, renderCounts, sleepMs} from './utils';
-import {noteUsage} from './usage';
+import {renderCount, renderCounts, saveGame, sleepMs} from './utils';
 
 /**
  * Number of pixels we tell the grid-view to pad itself.
@@ -259,7 +258,7 @@ export class GameView extends LitElement {
       </div>
       <div id="grid">
         <grid-view
-          theme=${this.theme}
+          theme=${theme}
           padding="${GRID_VIEW_PADDING}"
           isInteractive
           .isPaused=${gameState?.isPaused ?? true}
@@ -459,20 +458,11 @@ export class GameView extends LitElement {
     }
   }
 
-  /** Saves the game state to the database. */
+  /** Saves the game state to the database, if it has been started. */
   private async saveGame() {
     const {gameState} = this;
-    if (!gameState) return;
-    const {lastPlayed} = gameState;
-    if (!lastPlayed) return;
-    noteUsage();
-    const db = await this.db;
-    await db.put('games', {
-      puzzleId: gameState.puzzleId.seed,
-      lastPlayed,
-      elapsedMs: gameState.elapsedMs,
-      wordsFound: gameState.wordsToStore,
-    });
+    if (!gameState || !gameState.lastPlayed) return;
+    await saveGame(await this.db, gameState);
   }
 
   private async timerExpired(event: CustomEvent<boolean>) {
