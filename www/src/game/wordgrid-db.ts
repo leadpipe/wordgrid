@@ -71,6 +71,11 @@ export interface WordgridDb extends DBSchema {
  */
 export type GameRecord = WordgridDb['games']['value'];
 
+/**
+ * The type of shares -- games shared with us -- within the wordgrid database.
+ */
+export type ShareRecord = WordgridDb['shares']['value'];
+
 export function openWordgridDb(): Promise<IDBPDatabase<WordgridDb>> {
   return openDB<WordgridDb>('wordgrid', 1, {
     upgrade(db) {
