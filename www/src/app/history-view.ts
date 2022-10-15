@@ -3,7 +3,7 @@ import './game-summary';
 import {css, html, LitElement, PropertyValues} from 'lit';
 import {customElement, property, state} from 'lit/decorators.js';
 import {GameRecord, openWordgridDb} from '../game/wordgrid-db';
-import {MAY_SCROLL_CLASS} from './styles';
+import {HISTORY_PADDING_PX, MAY_SCROLL_CLASS} from './styles';
 import {Theme} from './types';
 import {noteUsage} from './usage';
 
@@ -19,7 +19,7 @@ class HistoryView extends LitElement {
     css`
       :host {
         display: block;
-        padding: 8px;
+        padding: ${HISTORY_PADDING_PX}px;
         height: 100%;
       }
 
