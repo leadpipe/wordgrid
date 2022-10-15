@@ -2,21 +2,28 @@ import * as wasm from 'wordgrid-rust';
 import {GridResultMessage} from '../worker/worker-types';
 import {Path, PathFinder} from './paths';
 import {PuzzleId} from './puzzle-id';
+import {SharedGameState} from './shared-game-state';
 import {Counts, WordJudgement} from './types';
 import {
   GameRecord,
   isWordsComplete,
+  ShareRecord,
   WordsComplete,
   WordsInProgress,
 } from './wordgrid-db';
 
+/**
+ * Maintains the state of the game as it's being played.
+ */
 export class GameState {
   private readonly found = new Set<string>();
   private readonly reverseFound: string[] = [];
   private readonly categories: readonly wasm.WordCategory[];
-  private readonly countsByCategory: Map<wasm.WordCategory, Counts>;
+  readonly wordsByCategory: ReadonlyMap<
+    wasm.WordCategory,
+    ReadonlySet<string>
+  >;
   private readonly points: Counts;
-  private readonly pointsByCategory: Map<wasm.WordCategory, Counts>;
   /** The points for all the words found before the deadline.s */
   private earnedPointsCache = 0;
   /** Elapsed play time in milliseconds prior to the current period. */
@@ -36,29 +43,20 @@ export class GameState {
     complete = false,
     lastPlayed: Date | null = null
   ) {
-    const countsByCategory = new Map<wasm.WordCategory, Counts>();
+    const wordsByCategory = new Map<wasm.WordCategory, Set<string>>();
     let totalPoints = 0;
-    const pointsByCategory = new Map<wasm.WordCategory, Counts>();
     for (const [word, category] of puzzle.words.entries()) {
-      let counts = countsByCategory.get(category);
-      if (counts === undefined) {
-        counts = {found: 0, total: 0};
-        countsByCategory.set(category, counts);
+      let words = wordsByCategory.get(category);
+      if (words === undefined) {
+        words = new Set();
+        wordsByCategory.set(category, words);
       }
-      ++counts.total;
-      const wordPoints = GameState.scoreWord(word);
-      totalPoints += wordPoints;
-      let points = pointsByCategory.get(category);
-      if (points === undefined) {
-        points = {found: 0, total: 0};
-        pointsByCategory.set(category, points);
-      }
-      points.total += wordPoints;
+      words.add(word);
+      totalPoints += GameState.scoreWord(word);
     }
-    this.countsByCategory = countsByCategory;
+    this.wordsByCategory = wordsByCategory;
     this.points = {found: 0, total: totalPoints};
-    this.pointsByCategory = pointsByCategory;
-    this.categories = [...countsByCategory.keys()].sort((a, b) => a - b);
+    this.categories = [...wordsByCategory.keys()].sort((a, b) => a - b);
     this.priorElapsedMs = priorElapsedMs;
     this.numFoundWithinTimeLimit = priorNumFoundWithinTimeLimit;
     for (const word of previouslyFound) {
@@ -169,11 +167,8 @@ export class GameState {
   private addPreviouslyFoundWord(word: string) {
     this.found.add(word);
     this.reverseFound.unshift(word);
-    const category = this.puzzle.words.get(word)!;
-    this.countsByCategory.get(category)!.found++;
     const points = GameState.scoreWord(word);
     this.points.found += points;
-    this.pointsByCategory.get(category)!.found += points;
     if (this.found.size === this.puzzle.words.size) {
       // The last one!
       this.markComplete();
@@ -181,31 +176,20 @@ export class GameState {
   }
 
   /**
-   * Returns the number of words found and the total number of words, either
-   * overall or for one category.
-   * @param category The category to get counts for, or leave it out to get the
-   * overall counts.
-   * @returns The found and total counts for either the category or overall.
+   * Returns the number of words found and the total number of words.
+   * @returns The found and total counts.
    */
-  getWordCounts(category?: wasm.WordCategory): Counts {
-    if (category === undefined) {
-      return {found: this.found.size, total: this.puzzle.words.size};
-    }
-    return this.countsByCategory.get(category) ?? {found: 0, total: 0};
+  getWordCounts(): Counts {
+    return {found: this.found.size, total: this.puzzle.words.size};
   }
 
   /**
    * Returns the number of points scored for words found and the total number of
-   * possible points, either overall or for one category.
-   * @param category The category to get points for, or leave it out to get the
-   * overall points.
-   * @returns The found and total points for either the category or overall.
+   * possible points.
+   * @returns The found and total points.
    */
-  getWordPoints(category?: wasm.WordCategory): Counts {
-    if (category === undefined) {
-      return {...this.points};
-    }
-    return this.pointsByCategory.get(category) ?? {found: 0, total: 0};
+  getWordPoints(): Counts {
+    return {...this.points};
   }
 
   /** The number of points accumulated before the timer expired. */
@@ -237,15 +221,46 @@ export class GameState {
   }
 
   /**
-   * Returns all the words found, split into sets with the words found before
-   * and after the time limit.
-   * @returns Two sets, containing the words found before and after the time
-   * limit.
+   * Converts this game into the form used for games shared with us.
+   * @param name The name to use for this user.
+   * @returns the shared game state corresponding to this game
    */
-  getFoundWordsSets(): [Set<string>, Set<string>] {
-    const firstWords = [...this.found];
-    const secondWords = firstWords.splice(this.numFoundWithinTimeLimit);
-    return [new Set(firstWords), new Set(secondWords)];
+  asSharedGameState(name: string): SharedGameState {
+    return this.convertToSharedGamesState(name, this.getWordsInProgress());
+  }
+
+  /**
+   * Converts the given share record to a shared game state.  The record must be
+   * for the same puzzle as this game state.
+   * @param record The share record to convert to a shared game state.
+   * @returns the shared game state corresponding to the given record.
+   */
+  toSharedGameState(record: ShareRecord): SharedGameState {
+    if (record.puzzleId !== this.puzzle.message.seed) {
+      throw new Error(
+        `Wrong shared game: ${record.puzzleId} instead of ${this.puzzle.message.seed}`
+      );
+    }
+    return this.convertToSharedGamesState(
+      record.person,
+      GameState.reconstructWords(this.puzzle, record.wordsFound)
+    );
+  }
+
+  private getWordsInProgress(): WordsInProgress {
+    return {
+      words: [...this.found],
+      cutoff: this.numFoundWithinTimeLimit,
+    };
+  }
+
+  private convertToSharedGamesState(
+    person: string,
+    wordsInProgress: WordsInProgress
+  ): SharedGameState {
+    const before = wordsInProgress.words;
+    const after = before.splice(wordsInProgress.cutoff);
+    return new SharedGameState(this, person, new Set(before), new Set(after));
   }
 
   /**
@@ -331,9 +346,9 @@ export class GameState {
     if (this.complete) {
       throw new Error("Can't resume a complete game");
     }
+    this.lastPlayedTimestamp = Date.now();
     if (this.isPaused) {
-      this.resumedTimestamp = Date.now();
-      this.lastPlayedTimestamp = this.resumedTimestamp;
+      this.resumedTimestamp = this.lastPlayedTimestamp;
     }
   }
 
@@ -341,10 +356,10 @@ export class GameState {
    * Stops the clock for this game, if it was previously running.
    */
   pause() {
+    this.lastPlayedTimestamp = Date.now();
     if (!this.isPaused) {
       this.priorElapsedMs = this.elapsedMs;
       this.resumedTimestamp = 0;
-      this.lastPlayedTimestamp = Date.now();
     }
   }
 
@@ -368,10 +383,7 @@ export class GameState {
    */
   get wordsToStore(): WordsInProgress | WordsComplete {
     if (!this.complete) {
-      return {
-        words: [...this.found],
-        cutoff: this.numFoundWithinTimeLimit,
-      };
+      return this.getWordsInProgress();
     }
     const firstWords = [...this.found];
     const secondWords = firstWords.splice(this.numFoundWithinTimeLimit);
