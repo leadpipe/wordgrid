@@ -426,6 +426,10 @@ export class GameView extends LitElement {
     this.gameState = null;
     this.style.setProperty('--grid-spec-size', puzzleId.spec.size.toString());
     const puzzle = await requestPuzzle(puzzleId);
+    if (this.puzzleId.seed !== puzzleId.seed) {
+      // We've been superseded
+      return;
+    }
     // If there are no words in this grid, move on to the next puzzle.
     if (puzzle.words.size === 0) {
       const {resumeImmediately} = this;
