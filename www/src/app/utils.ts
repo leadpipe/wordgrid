@@ -14,17 +14,20 @@ export function renderCategory(category: wasm.WordCategory) {
   return result;
 }
 
-export function pluralize(noun: string, number: number) {
+export function pluralize(noun: string, number: number): string {
   return number === 1 ? noun : `${noun}s`;
 }
 
-export function renderCount(count: number, countingWhat: string) {
-  return html`${count} ${pluralize(countingWhat, count)}`;
+export function renderCount(count: number, countingWhat: string): string {
+  return `${count} ${pluralize(countingWhat, count)}`;
 }
 
-export function renderCounts(counts: Counts | undefined, countingWhat: string) {
+export function renderCounts(
+  counts: Counts | undefined,
+  countingWhat: string
+): string {
   if (!counts) return '';
-  return html`${counts.found} / ${counts.total}
+  return `${counts.found} / ${counts.total}
   ${pluralize(countingWhat, counts.total)}
   (${Math.round((counts.found / counts.total) * 100)}%)`;
 }
