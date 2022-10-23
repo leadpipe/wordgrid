@@ -470,7 +470,7 @@ export class LeadpipeWordgrid extends LitElement {
       if (
         mostRecentSeed &&
         (isGameComplete(dailyRecord) ||
-          PuzzleId.fromSeed(mostRecentSeed).dateString === dailyId.dateString)
+          toIsoDateString(mostRecentCursor.key) === dailyId.dateString)
       ) {
         this.puzzleSeed = mostRecentSeed;
       } else {
