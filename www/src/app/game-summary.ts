@@ -542,6 +542,7 @@ export class GameSummary extends LitElement {
           composed: true,
         })
       );
+      this.requestUpdate();
     }
   }
 
