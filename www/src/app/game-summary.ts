@@ -4,7 +4,7 @@ import './mat-icon';
 import './solution-word';
 
 import {css, html, LitElement, PropertyValues} from 'lit';
-import {customElement, property, state} from 'lit/decorators.js';
+import {customElement, property, query, state} from 'lit/decorators.js';
 import * as wasm from 'wordgrid-rust';
 import {requestPuzzle} from '../puzzle-service';
 import {GameRecord, isWordsComplete, openWordgridDb} from '../game/wordgrid-db';
@@ -177,29 +177,7 @@ export class GameSummary extends LitElement {
                         `
                       : ''}
                     ${expanded
-                      ? html`<form @submit=${this.shareGame}>
-                          Share as
-                          <input
-                            id="share-as"
-                            type="text"
-                            value=${this.shareAs}
-                            maxlength="50"
-                            placeholder="Name/nickname"
-                            @input=${this.handleShareAsUpdated}
-                          />
-                          ${this.shareAs
-                            ? html`<button
-                                  id="share-button"
-                                  type="submit"
-                                  class="icon-button"
-                                  title="Share"
-                                  tabindex="0"
-                                >
-                                  <mat-icon name="share"></mat-icon>
-                                </button>
-                                <input id="share-as-url" readonly /> `
-                            : ''}
-                        </form>`
+                      ? this.renderShareForm()
                       : html`&mdash; expand to share`}
                   `
                 : html`
@@ -280,6 +258,44 @@ export class GameSummary extends LitElement {
           `
         : html` Loading... `}
     `;
+  }
+
+  private renderShareForm() {
+    return html`<form @submit=${this.shareGame}>
+      Share as
+      <input
+        id="share-as"
+        type="text"
+        value=${this.shareAs}
+        maxlength="50"
+        placeholder="Name/nickname"
+        @input=${this.handleShareAsUpdated}
+      />
+      ${this.shareAs
+        ? html`<button
+              id="share-button"
+              type="submit"
+              class="icon-button"
+              title="Share"
+              tabindex="0"
+            >
+              <mat-icon name="share"></mat-icon>
+            </button>
+            <input
+              id="share-text-input"
+              readonly
+              value=${this.shareClipboardText}
+              style="display: ${this.copyToClipboardFailed
+                ? 'inline-block'
+                : 'none'}"
+            />
+            ${this.shareClipboardText
+              ? this.copyToClipboardFailed
+                ? `Copy to clipboard to share`
+                : `Copied to clipboard`
+              : ''}`
+        : ''}
+    </form>`;
   }
 
   private renderAllWords(game: GameState, cats: readonly wasm.WordCategory[]) {
@@ -376,6 +392,9 @@ export class GameSummary extends LitElement {
   shares: SharedGameState[] = [];
   uniqueWords: ReadonlySet<string> = new Set();
   @state() shareAs = '';
+  @state() shareClipboardText = '';
+  @state() copyToClipboardFailed = false;
+  @query('#share-text-input') shareTextInput: HTMLInputElement | undefined;
 
   protected override updated(changedProperties: PropertyValues): void {
     if (changedProperties.has('record')) {
@@ -440,15 +459,17 @@ export class GameSummary extends LitElement {
 
   private handleShareAsUpdated(event: InputEvent) {
     this.shareAs = (event.target as HTMLInputElement).value;
+    this.shareClipboardText = '';
+    this.copyToClipboardFailed = false;
   }
 
-  private shareGame(event: Event) {
+  private async shareGame(event: Event) {
+    event.preventDefault();
     event.stopPropagation();
-    const urlElement = this.shadowRoot?.querySelector(
-      '#share-as-url'
-    ) as HTMLInputElement | null;
+    this.shareClipboardText = '';
+    this.copyToClipboardFailed = false;
     const {game, shareAs} = this;
-    if (urlElement && game) {
+    if (game) {
       const {wordsToStore} = game;
       if (!isWordsComplete(wordsToStore)) return;
       const random = new wasm.JsRandom(`${game.puzzleId.seed}:${shareAs}`);
@@ -459,9 +480,42 @@ export class GameSummary extends LitElement {
       if (wordsToStore.secondBits) {
         url += `/${wasm.obfuscate(wordsToStore.secondBits, random)}`;
       }
-      urlElement.value = url;
-      urlElement.select();
       random.free();
+
+      const title = 'Leadpipe Wordgrid';
+      const text = `${shareAs} earned ${renderCount(
+        game.earnedPoints,
+        'point'
+      )}.  How will you do?`;
+
+      let shared = false;
+      if ('share' in navigator) {
+        try {
+          await navigator.share({title, text, url});
+          shared = true;
+        } catch (e: unknown) {
+          console.log('Unable to share', e);
+        }
+      }
+
+      let copied = false;
+      if (!shared) {
+        this.shareClipboardText = `${text}  ${url}`;
+        try {
+          await navigator.clipboard.writeText(this.shareClipboardText);
+          copied = true;
+        } catch (e: unknown) {
+          console.log('Unable to write text to clipboard', e);
+        }
+      }
+
+      this.copyToClipboardFailed = !shared && !copied;
+      if (this.copyToClipboardFailed) {
+        await 0;  // Wait for the next microtask
+        if (this.shareTextInput) {
+          this.shareTextInput.select();
+        }
+      }
     }
   }
 
