@@ -430,8 +430,8 @@ export class GameView extends LitElement {
       // We've been superseded
       return;
     }
-    // If there are no words in this grid, move on to the next puzzle.
-    if (puzzle.words.size === 0) {
+    // If there are too few words in this grid, move on to the next puzzle.
+    if (puzzle.words.size < 50) {
       const {resumeImmediately} = this;
       this.dispatchEvent(
         new CustomEvent('play-puzzle', {
