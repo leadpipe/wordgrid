@@ -104,12 +104,20 @@ Tap a word in the list to see a path through the grid that yields that word.
 You start on the play page. To get to the history page, either complete a game
 (that is, quit it) or tap the left arrow above and to the left of the grid.
 
-## Sharing... coming soon
+## Sharing
 
-This preview release does not yet support sharing of your result. Eventually you
-will be able to share your completed games with others, see who got the most
-points, and go through the list of words to see which words people found (both
-before and after the timer expired).
+When you have completed a game, you can share it with others by entering the
+name you want to share as, and hitting enter. This will run the standard sharing
+logic of your device, or copy the share information to the clipboard. You can
+text or chat or email it to whomever you want to share with.
+
+The URL included in the shared text indicates which words you found. When
+someone clicks that link, Wordgrid saves your words for that person to compare
+with their own set of words. If they share back to you, you will both be able to
+see what the other found.
+
+You can click many people's share links for the same game, and you will see all
+of their found words.
 
 # Design
 
