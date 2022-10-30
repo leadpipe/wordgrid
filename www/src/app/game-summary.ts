@@ -319,7 +319,7 @@ export class GameSummary extends LitElement {
             />
             ${this.shareClipboardText
               ? this.copyToClipboardFailed
-                ? `Copy to clipboard to share`
+                ? `— Copy to clipboard to share`
                 : `— Copied to clipboard`
               : ''}`
         : ''}
@@ -424,10 +424,17 @@ export class GameSummary extends LitElement {
   @state() copyToClipboardFailed = false;
   @state() shareBack = false;
   @query('#share-text-input') shareTextInput: HTMLInputElement | undefined;
+  @query('#share-as') shareAsInput: HTMLInputElement | undefined;
 
-  protected override updated(changedProperties: PropertyValues): void {
+  protected override async updated(changedProperties: PropertyValues) {
     if (changedProperties.has('record')) {
       this.loadGame();
+    }
+    if (this.expanded && !this.shareAs) {
+      await 0;  // Wait for the next microtask
+      if (this.shareAsInput) {
+        this.shareAsInput.select();
+      }
     }
   }
 
