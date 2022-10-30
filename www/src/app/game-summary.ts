@@ -26,6 +26,7 @@ import {
   renderShortCounts,
   saveGame,
 } from './utils';
+import {getMonikers, useMoniker} from './prefs';
 
 @customElement('game-summary')
 export class GameSummary extends LitElement {
@@ -274,11 +275,17 @@ export class GameSummary extends LitElement {
       <input
         id="share-as"
         type="text"
+        list="monikers"
         value=${this.shareAs}
         maxlength="50"
         placeholder="Name/nickname"
         @input=${this.handleShareAsUpdated}
       />
+      <datalist id="monikers">
+        ${getMonikers().map(
+          moniker => html`<option value=${moniker}></option>`
+        )}
+      </datalist>
       ${this.shareAs
         ? html`<button
               id="share-button"
@@ -509,6 +516,7 @@ export class GameSummary extends LitElement {
 
       const title = SHARE_TITLE;
       const text = makeShareText(game, shareAs, shares, shareBack);
+      useMoniker(shareAs);
 
       let shared = false;
       if ('share' in navigator) {

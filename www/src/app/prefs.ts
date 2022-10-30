@@ -80,3 +80,32 @@ export function setShowTimer(flag: boolean) {
   window.localStorage.setItem('showTimer', String(flag));
   prefsTarget.dispatchEvent(new CustomEvent('show-timer', {detail: flag}));
 }
+
+let monikers: string[] = [];
+{
+  const stored = window.localStorage.getItem('monikers');
+  if (stored) {
+    try {
+      const obj = JSON.parse(stored);
+      if (obj instanceof Array) {
+        monikers = obj;
+      }
+    } catch (e: unknown) {
+      console.log('Bad data in local storage', stored, e);
+    }
+  }
+}
+
+export function getMonikers(): string[] {
+  return monikers.slice();
+}
+
+export function useMoniker(moniker: string) {
+  const mru = new Set([moniker]);
+  for (const m of monikers) {
+    mru.add(m);
+    if (mru.size >= 10) break;
+  }
+  monikers = [...mru];
+  window.localStorage.setItem('monikers', JSON.stringify(monikers));
+}
