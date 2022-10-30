@@ -7,11 +7,17 @@ import {css, html, LitElement, PropertyValues} from 'lit';
 import {customElement, property, query, state} from 'lit/decorators.js';
 import * as wasm from 'wordgrid-rust';
 import {requestPuzzle} from '../puzzle-service';
-import {GameRecord, isWordsComplete, openWordgridDb} from '../game/wordgrid-db';
+import {GameRecord, openWordgridDb} from '../game/wordgrid-db';
 import {GameState} from '../game/game-state';
 import {Path} from '../game/paths';
 import {PuzzleId} from '../game/puzzle-id';
 import {SharedGameState} from '../game/shared-game-state';
+import {makeShareText, makeShareUrl, SHARE_TITLE} from './sharing';
+import {
+  HISTORY_PADDING_PX,
+  ICON_BUTTON_CLASS,
+  MAY_SCROLL_CLASS,
+} from './styles';
 import {Theme} from './types';
 import {
   renderCategory,
@@ -20,11 +26,6 @@ import {
   renderShortCounts,
   saveGame,
 } from './utils';
-import {
-  HISTORY_PADDING_PX,
-  ICON_BUTTON_CLASS,
-  MAY_SCROLL_CLASS,
-} from './styles';
 
 @customElement('game-summary')
 export class GameSummary extends LitElement {
@@ -281,8 +282,21 @@ export class GameSummary extends LitElement {
             >
               <mat-icon name="share"></mat-icon>
             </button>
+            ${this.shares.length > 1
+              ? html`
+                  <label>
+                    <input
+                      type="checkbox"
+                      ?checked=${this.shareBack}
+                      @change=${this.handleShareBackChanged}
+                    />
+                    Share back
+                  </label>
+                `
+              : ''}
             <input
               id="share-text-input"
+              type="text"
               readonly
               value=${this.shareClipboardText}
               style="display: ${this.copyToClipboardFailed
@@ -292,7 +306,7 @@ export class GameSummary extends LitElement {
             ${this.shareClipboardText
               ? this.copyToClipboardFailed
                 ? `Copy to clipboard to share`
-                : `Copied to clipboard`
+                : `— Copied to clipboard`
               : ''}`
         : ''}
     </form>`;
@@ -394,6 +408,7 @@ export class GameSummary extends LitElement {
   @state() shareAs = '';
   @state() shareClipboardText = '';
   @state() copyToClipboardFailed = false;
+  @state() shareBack = false;
   @query('#share-text-input') shareTextInput: HTMLInputElement | undefined;
 
   protected override updated(changedProperties: PropertyValues): void {
@@ -454,6 +469,7 @@ export class GameSummary extends LitElement {
     }
     this.shares = shares;
     this.uniqueWords = uniqueWords;
+    this.shareBack = shares.length > 1;
     this.game = game;
   }
 
@@ -463,30 +479,22 @@ export class GameSummary extends LitElement {
     this.copyToClipboardFailed = false;
   }
 
+  private handleShareBackChanged(event: InputEvent) {
+    this.shareBack = (event.target as HTMLInputElement).checked;
+  }
+
   private async shareGame(event: Event) {
     event.preventDefault();
     event.stopPropagation();
     this.shareClipboardText = '';
     this.copyToClipboardFailed = false;
-    const {game, shareAs} = this;
+    const {game, shareAs, shares, shareBack} = this;
     if (game) {
-      const {wordsToStore} = game;
-      if (!isWordsComplete(wordsToStore)) return;
-      const random = new wasm.JsRandom(`${game.puzzleId.seed}:${shareAs}`);
-      const firstBits = wasm.obfuscate(wordsToStore.firstBits, random);
-      let url = `${location.origin}${location.pathname}#share/${
-        game.puzzleId.seed
-      }/${encodeURIComponent(shareAs)}/${firstBits}`;
-      if (wordsToStore.secondBits) {
-        url += `/${wasm.obfuscate(wordsToStore.secondBits, random)}`;
-      }
-      random.free();
+      const url = makeShareUrl(game, shareAs);
+      if (!url) return;
 
-      const title = 'Leadpipe Wordgrid';
-      const text = `${shareAs} earned ${renderCount(
-        game.earnedPoints,
-        'point'
-      )}.  How will you do?`;
+      const title = SHARE_TITLE;
+      const text = makeShareText(game, shareAs, shares, shareBack);
 
       let shared = false;
       if ('share' in navigator) {
@@ -511,7 +519,7 @@ export class GameSummary extends LitElement {
 
       this.copyToClipboardFailed = !shared && !copied;
       if (this.copyToClipboardFailed) {
-        await 0;  // Wait for the next microtask
+        await 0; // Wait for the next microtask
         if (this.shareTextInput) {
           this.shareTextInput.select();
         }

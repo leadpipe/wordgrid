@@ -5,7 +5,6 @@ import './mat-icon';
 
 import {css, html, LitElement, TemplateResult} from 'lit';
 import {customElement, property, query, state} from 'lit/decorators.js';
-import * as wasm from 'wordgrid-rust';
 import {gameSpecByName} from '../game/game-spec';
 import {PuzzleId, toIsoDateString} from '../game/puzzle-id';
 import {
@@ -14,7 +13,7 @@ import {
   sameWordsWereFound,
 } from '../game/wordgrid-db';
 import {requestPuzzle} from '../puzzle-service';
-import {Theme, ThemeOrAuto} from './types';
+import {PuzzleToPlay} from './events';
 import {
   getCurrentTheme,
   getPreferredTheme,
@@ -23,8 +22,7 @@ import {
   setPreferredTheme,
   setShowTimer,
 } from './prefs';
-import {lastUsedPlus} from './usage';
-import {PuzzleToPlay} from './events';
+import {decodeShareBits, decodeShareName} from './sharing';
 import {
   DARK_BLUE,
   DARK_THEME_BACKGROUND,
@@ -34,6 +32,8 @@ import {
   LIGHT_THEME_TEXT,
   MAY_SCROLL_CLASS,
 } from './styles';
+import {Theme, ThemeOrAuto} from './types';
+import {lastUsedPlus} from './usage';
 import {ensureExhaustiveSwitch} from './utils';
 
 type Page = 'play' | 'history';
@@ -445,8 +445,8 @@ export class LeadpipeWordgrid extends LitElement {
 
   private async startApp() {
     await this.cleanDb();
-    let [page, parts, _params] = this.parseHash();
-    const puzzleSeed = parts[0] ?? '';
+    let [page, pathParts, _params] = this.parseHash();
+    const puzzleSeed = pathParts.shift() ?? '';
     const dailyId = PuzzleId.daily();
     const dailySeed = dailyId.seed;
     if (page === 'history' || (page === 'play' && puzzleSeed)) {
@@ -457,8 +457,7 @@ export class LeadpipeWordgrid extends LitElement {
     }
     if (page === 'share') {
       this.puzzleSeed = puzzleSeed;
-      const name = decodeURIComponent(parts[1]);
-      await this.importShare(puzzleSeed, name, parts[2], parts[3]);
+      await this.importShare(puzzleSeed, pathParts);
     } else {
       const db = await this.db;
       const dailyRecord = await db.get('games', dailySeed);
@@ -481,29 +480,18 @@ export class LeadpipeWordgrid extends LitElement {
     this.updateLocation();
   }
 
-  private async importShare(
-    puzzleSeed: string,
-    name: string,
-    obfuscatedFirstBits: string,
-    obfuscatedSecondBits?: string
-  ) {
+  private async importShare(puzzleSeed: string, pathParts: string[]) {
     const db = await this.db;
+    const name = decodeShareName(pathParts);
     let wordsShared;
-    const random = new wasm.JsRandom(`${puzzleSeed}:${name}`);
     try {
-      const firstBits = wasm.deobfuscate(obfuscatedFirstBits, random);
-      const secondBits = obfuscatedSecondBits
-        ? wasm.deobfuscate(obfuscatedSecondBits, random)
-        : undefined;
-      wordsShared = {firstBits, secondBits};
+      wordsShared = decodeShareBits(puzzleSeed, name, pathParts);
     } catch (e) {
       console.log('Bad share URL', location, e);
       alert(
         `Unable to import ${name}'s share of ${puzzleSeed}.  Did it get truncated?`
       );
       return;
-    } finally {
-      random.free();
     }
 
     const myRecord = await db.get('games', puzzleSeed);
