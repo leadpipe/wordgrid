@@ -47,6 +47,22 @@ export class PuzzleId {
   }
 
   /**
+   * Returns an IndexedDB range over all the puzzle IDs for this one's date and
+   * size.  That is, the puzzle IDs it matches will all have the same date and
+   * size (and dictionary version), but any counter.
+   */
+  toDbRange(): IDBKeyRange {
+    return IDBKeyRange.bound(
+      `${this.version}:${this.dateString}:${this.spec.size}`,
+      // Note that this upper bound only works because the max size is 6, so
+      // there can be no decimal wrapping.
+      `${this.version}:${this.dateString}:${this.spec.size + 1}`,
+      false,
+      true
+    );
+  }
+
+  /**
    * Returns a puzzle ID that's the same as this one except for the counter,
    * which is one larger.
    * @returns The next puzzle ID for the same date, version, and game size.
@@ -58,6 +74,25 @@ export class PuzzleId {
       this.spec,
       1 + this.counter
     );
+  }
+
+  /**
+   * Tells whether this ID object compares as less than, equal to, or greater
+   * than the given ID object, by returning a number that is less than, equal
+   * to, or greater than zero.
+   * @param that The other ID object to compare against this one.
+   */
+  compareTo(that: PuzzleId): number {
+    if (this.version !== that.version) {
+      return this.version - that.version;
+    }
+    if (this.dateString !== that.dateString) {
+      return this.dateString < that.dateString ? -1 : 1;
+    }
+    if (this.spec.size !== that.spec.size) {
+      return this.spec.size - that.spec.size;
+    }
+    return this.counter - that.counter;
   }
 
   /**

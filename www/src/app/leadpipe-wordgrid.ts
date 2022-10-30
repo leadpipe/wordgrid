@@ -418,24 +418,21 @@ export class LeadpipeWordgrid extends LitElement {
     this.closeSettings();
     const name = (event.target as HTMLElement).dataset.name!;
     const spec = gameSpecByName(name);
-    const date = new Date();
+    let nextPuzzleId = PuzzleId.forSpec(spec);
     const db = await this.db;
-    for (let counter = 1; true; ++counter) {
-      const puzzleId = PuzzleId.forSpec(spec, date, counter);
-      const cursor = await db
-        .transaction('games')
-        .store.openCursor(puzzleId.seed);
-      if (!cursor) {
-        this.dispatchEvent(
-          new CustomEvent('play-puzzle', {
-            detail: {puzzleId: puzzleId},
-            bubbles: true,
-            composed: true,
-          })
-        );
-        return;
+    for (const seed of await db.getAllKeys('games', nextPuzzleId.toDbRange())) {
+      const id = PuzzleId.fromSeed(seed);
+      if (nextPuzzleId.compareTo(id) <= 0) {
+        nextPuzzleId = id.next();
       }
     }
+    this.dispatchEvent(
+      new CustomEvent('play-puzzle', {
+        detail: {puzzleId: nextPuzzleId},
+        bubbles: true,
+        composed: true,
+      })
+    );
   }
 
   private async trackWordsLoading() {
