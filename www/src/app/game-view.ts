@@ -95,7 +95,7 @@ export class GameView extends LitElement {
       }
 
       #controls > div:nth-child(2) {
-        flex: 3 1 0;
+        flex: 2 1 0;
       }
 
       #controls > div:nth-child(3) {
