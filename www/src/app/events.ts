@@ -57,6 +57,11 @@ declare global {
      * Sent by meta-panel when the user clicks the settings icon.
      */
     'show-settings': CustomEvent<void>;
+
+    /**
+     * Sent by game-summary when it has loaded its game.
+     */
+    'game-loaded': CustomEvent<PuzzleId>;
   }
 }
 

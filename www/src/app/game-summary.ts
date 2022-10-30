@@ -471,6 +471,13 @@ export class GameSummary extends LitElement {
     this.uniqueWords = uniqueWords;
     this.shareBack = shares.length > 1;
     this.game = game;
+    this.dispatchEvent(
+      new CustomEvent('game-loaded', {
+        detail: game.puzzleId,
+        bubbles: true,
+        composed: true,
+      })
+    );
   }
 
   private handleShareAsUpdated(event: InputEvent) {
