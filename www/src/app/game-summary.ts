@@ -96,6 +96,13 @@ export class GameSummary extends LitElement {
         width: 130px;
       }
 
+      .person-name {
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        max-height: 24px;
+      }
+
       .winner {
         text-decoration: green underline;
       }
@@ -335,7 +342,7 @@ export class GameSummary extends LitElement {
                         ? 'winner'
                         : ''}
                     >
-                      ${share.person}
+                      <div class="person-name">${share.person}</div>
                     </th>`
                 )}
               </tr>
