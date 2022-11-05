@@ -119,6 +119,20 @@ see what the other found.
 You can click many people's share links for the same game, and you will see all
 of their found words.
 
+# Privacy
+
+Wordgrid uses [Google Analytics
+4](https://developers.google.com/analytics/devguides/collection/ga4)(GA4) to
+track how and where the app is used. That is, it sends tiny messages describing
+the actions you have taken in the game to GA4, which aggregates this information
+into useful statistics it presents as charts and graphs.
+
+Wordgrid has no idea who you are, what your interests are (apart from word
+games, apparently), or even how many different devices you play Wordgrid on.
+Each distinct device or browser profile appears to be a different person within
+GA4. GA4 translates your IP address into a rough geographic location, but that
+is all it does with IP addresses — it does not store them.
+
 # Design
 
 Wordgrid is a [progressive web
