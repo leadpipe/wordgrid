@@ -22,8 +22,10 @@ export async function handleToWorkerMessage(
 }
 
 let words: wasm.Words;
+let wordsLoadTimeMs: number;
 const wordsPromise = loadWords();
 async function loadWords() {
+  const startLoadMs = performance.now();
   const response = await fetch(`words-v${WORDS_VERSION}.txt`);
   const reader = response.body?.getReader();
   const builder = new wasm.WordsBuilder();
@@ -33,8 +35,10 @@ async function loadWords() {
     builder.addLines(result.value);
   }
   words = builder.build();
+  wordsLoadTimeMs = performance.now() - startLoadMs;
 }
 
+let gridsMade = 0;
 function makeGrid(
   m: MakeGridMessage
 ): GridResultMessage | UnknownVersionMessage {
@@ -48,11 +52,20 @@ function makeGrid(
 
   let answer = cache.get(m.seed);
   if (!answer) {
-    answer = actuallyMakeGrid(m);
-    cache.set(m.seed, answer);
+    const wordsLoadMs = gridsMade === 0 ? wordsLoadTimeMs : undefined;
+    ++gridsMade;
+    const startTimeMs = performance.now();
+    const cached = actuallyMakeGrid(m);
+    const elapsedMs = performance.now() - startTimeMs;
+    cache.set(m.seed, cached);
     while (cache.size > MAX_CACHED) {
       const seed = cache.keys().next().value;
       cache.delete(seed);
+    }
+    answer = {
+      ...cached,
+      wordsLoadMs,
+      elapsedMs,
     }
   }
   return answer;

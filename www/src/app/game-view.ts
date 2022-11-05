@@ -8,6 +8,7 @@ import './solution-word';
 import {css, html, LitElement, PropertyValues} from 'lit';
 import {customElement, property, state} from 'lit/decorators.js';
 import {repeat} from 'lit/directives/repeat.js';
+import {EventType, logEvent} from '../analytics';
 import {requestPuzzle} from '../puzzle-service';
 import {GridResultMessage} from '../worker/worker-types';
 import {GameState} from '../game/game-state';
@@ -486,17 +487,20 @@ export class GameView extends LitElement {
   private async goToHistory() {
     await this.saveGame();
     this.redirectToHistory();
+    logEvent(EventType.ACTION, {category: 'go to history'});
   }
 
   private resumePlay() {
     this.gameState?.resume();
     this.requestUpdate();
+    logEvent(EventType.ACTION, {category: 'resume'});
   }
 
   private async pausePlayAsync() {
     this.gameState?.pause();
     this.requestUpdate();
     await this.saveGame();
+    logEvent(EventType.ACTION, {category: 'pause'});
   }
 
   private pausePlay() {
@@ -507,6 +511,7 @@ export class GameView extends LitElement {
     this.gameState?.markComplete();
     await this.saveGame();
     this.redirectToHistory();
+    logEvent(EventType.ACTION, {category: 'quit'});
   }
 
   private rotatePuzzle(_event: Event) {
@@ -521,6 +526,7 @@ export class GameView extends LitElement {
         ...puzzle,
         grid,
       };
+      logEvent(EventType.ACTION, {category: 'rotate'});
     }
   }
 
@@ -532,6 +538,7 @@ export class GameView extends LitElement {
         ...puzzle,
         grid,
       };
+      logEvent(EventType.ACTION, {category: 'flip'});
     }
   }
 

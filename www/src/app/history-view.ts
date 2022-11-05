@@ -6,7 +6,7 @@ import {GameRecord, openWordgridDb} from '../game/wordgrid-db';
 import {HISTORY_PADDING_PX, MAY_SCROLL_CLASS} from './styles';
 import {Theme} from './types';
 import {noteUsage} from './usage';
-import { PuzzleId } from '../game/puzzle-id';
+import {PuzzleId} from '../game/puzzle-id';
 
 /**
  * Shows the history of games played, and may expand one game to show its
@@ -98,7 +98,7 @@ class HistoryView extends LitElement {
     window.setTimeout(() => {
       const item = this.shadowRoot?.querySelector('game-summary[expanded]');
       if (item) {
-        item.scrollIntoView({ behavior: 'smooth' });
+        item.scrollIntoView({behavior: 'smooth'});
       }
     });
   }

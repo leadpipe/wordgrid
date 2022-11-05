@@ -42,6 +42,18 @@ export interface GridResultMessage {
 
   /** The words that appear in the grid, each with its category. */
   readonly words: GridWords;
+
+  /**
+   * If present, this was the first puzzle made and loading all the words took
+   * this many milliseconds.
+   */
+  readonly wordsLoadMs?: number;
+
+  /**
+   * How long it took the worker to make the grid, in milliseconds.  Absent for
+   * previously cached grids.
+   */
+  readonly elapsedMs?: number;
 }
 
 export interface UnknownVersionMessage {

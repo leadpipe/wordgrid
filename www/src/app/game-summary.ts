@@ -6,6 +6,7 @@ import './solution-word';
 import {css, html, LitElement, PropertyValues} from 'lit';
 import {customElement, property, query, state} from 'lit/decorators.js';
 import * as wasm from 'wordgrid-rust';
+import {EventType, logEvent} from '../analytics';
 import {requestPuzzle} from '../puzzle-service';
 import {GameRecord, openWordgridDb} from '../game/wordgrid-db';
 import {GameState} from '../game/game-state';
@@ -431,7 +432,7 @@ export class GameSummary extends LitElement {
       this.loadGame();
     }
     if (this.expanded && !this.shareAs) {
-      await 0;  // Wait for the next microtask
+      await 0; // Wait for the next microtask
       if (this.shareAsInput) {
         this.shareAsInput.select();
       }
@@ -531,7 +532,10 @@ export class GameSummary extends LitElement {
           await navigator.share({title, text, url});
           shared = true;
         } catch (e: unknown) {
-          console.log('Unable to share', e);
+          logEvent(EventType.SYSTEM, {
+            category: 'navigator.share failed',
+            detail: `${e}`,
+          });
         }
       }
 
@@ -542,7 +546,10 @@ export class GameSummary extends LitElement {
           await navigator.clipboard.writeText(this.shareClipboardText);
           copied = true;
         } catch (e: unknown) {
-          console.log('Unable to write text to clipboard', e);
+          logEvent(EventType.SYSTEM, {
+            category: 'navigator.clipboard.writeText failed',
+            detail: `${e}`,
+          });
         }
       }
 
@@ -553,6 +560,10 @@ export class GameSummary extends LitElement {
           this.shareTextInput.select();
         }
       }
+      logEvent(EventType.ACTION, {
+        category: shareBack ? 'share back' : 'share',
+        detail: shared ? 'system' : copied ? 'clipboard' : 'manual',
+      });
     }
   }
 
@@ -565,6 +576,7 @@ export class GameSummary extends LitElement {
           composed: true,
         })
       );
+      logEvent(EventType.ACTION, {category: 'resume from history'});
     }
   }
 
@@ -580,6 +592,7 @@ export class GameSummary extends LitElement {
         })
       );
       this.requestUpdate();
+      logEvent(EventType.ACTION, {category: 'quit from history'});
     }
   }
 
@@ -592,6 +605,7 @@ export class GameSummary extends LitElement {
         composed: true,
       })
     );
+    logEvent(EventType.ACTION, {category: 'expand history'});
   }
 }
 

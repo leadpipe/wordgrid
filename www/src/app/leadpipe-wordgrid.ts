@@ -5,6 +5,7 @@ import './mat-icon';
 
 import {css, html, LitElement, TemplateResult} from 'lit';
 import {customElement, property, query, state} from 'lit/decorators.js';
+import {EventType, logEvent} from '../analytics';
 import {gameSpecByName} from '../game/game-spec';
 import {PuzzleId, toIsoDateString} from '../game/puzzle-id';
 import {
@@ -58,6 +59,7 @@ async function refreshDaily(root: LeadpipeWordgrid) {
     // attempt to reload, or just make the switch.  Otherwise, postpone and try
     // again later.
     if (checkTime > lastUsedPlus(MIN_IDLE_TIME_MS)) {
+      logEvent(EventType.SYSTEM, {category: 'made daily puzzle'});
       dailyPuzzleId = current;
       // Clean up the DB, then redirect to the new puzzle.
       await root.cleanDb();
@@ -80,6 +82,8 @@ async function refreshDaily(root: LeadpipeWordgrid) {
     REFRESH_POLL_TIME_MS
   );
 }
+
+logEvent(EventType.SYSTEM, {category: 'page loaded'});
 
 /** Top-level component. */
 @customElement('leadpipe-wordgrid')
@@ -155,7 +159,7 @@ export class LeadpipeWordgrid extends LitElement {
       html`
         <dialog
           id="settings"
-          @cancel=${this.settingsCanceled}
+          @close=${this.settingsClosed}
           @keydown=${this.handleSettingsKey}
         >
           <a id="close-settings" @click=${this.closeSettings} title="Close"
@@ -367,10 +371,12 @@ export class LeadpipeWordgrid extends LitElement {
   private handleShowSettings() {
     this.dialogShowing = true;
     this.settingsDialog.showModal();
+    logEvent(EventType.ACTION, {category: 'settings opened'});
   }
 
-  private settingsCanceled() {
+  private settingsClosed() {
     this.dialogShowing = false;
+    logEvent(EventType.ACTION, {category: 'settings closed'});
   }
 
   private handleSettingsKey(event: KeyboardEvent) {
@@ -387,7 +393,6 @@ export class LeadpipeWordgrid extends LitElement {
   }
 
   private closeSettings() {
-    this.dialogShowing = false;
     this.settingsDialog.close();
   }
 
@@ -395,12 +400,17 @@ export class LeadpipeWordgrid extends LitElement {
     const theme = this.findData(event, 'theme') as ThemeOrAuto;
     this.preferredTheme = theme;
     setPreferredTheme(theme);
+    logEvent(EventType.ACTION, {category: 'theme set', detail: theme});
   }
 
   private setShowTimer(event: Event) {
     const show = this.findData(event, 'show') === 'true';
     this.showTimer = show;
     setShowTimer(show);
+    logEvent(EventType.ACTION, {
+      category: 'show-timer set',
+      detail: String(show),
+    });
   }
 
   private findData(event: Event, dataName: string): string {
@@ -433,6 +443,7 @@ export class LeadpipeWordgrid extends LitElement {
         composed: true,
       })
     );
+    logEvent(EventType.ACTION, {category: 'new puzzle', detail: name});
   }
 
   private async trackWordsLoading() {
@@ -485,6 +496,7 @@ export class LeadpipeWordgrid extends LitElement {
       wordsShared = decodeShareBits(puzzleSeed, name, pathParts);
     } catch (e) {
       console.log('Bad share URL', location, e);
+      logEvent(EventType.SYSTEM, {category: 'bad share url', detail: `${e}`});
       alert(
         `Unable to import ${name}'s share of ${puzzleSeed}.  Did it get truncated?`
       );
@@ -493,6 +505,7 @@ export class LeadpipeWordgrid extends LitElement {
 
     const myRecord = await db.get('games', puzzleSeed);
     if (myRecord && sameWordsWereFound(myRecord.wordsFound, wordsShared)) {
+      logEvent(EventType.SYSTEM, {category: 'self import'});
       alert(`${name}'s share of ${puzzleSeed} is identical to your game.`);
       return;
     }
@@ -506,8 +519,10 @@ export class LeadpipeWordgrid extends LitElement {
       }
     }
     if (already === name) {
+      logEvent(EventType.SYSTEM, {category: 'duplicate import'});
       alert(`You've already imported ${name}'s share of ${puzzleSeed}.`);
     } else if (already !== null) {
+      logEvent(EventType.SYSTEM, {category: 'duplicate import different name'});
       alert(
         `You've already imported ${name}'s share of ${puzzleSeed}, under the name '${already}'.`
       );
@@ -517,6 +532,7 @@ export class LeadpipeWordgrid extends LitElement {
         puzzleId: puzzleSeed,
         wordsFound: wordsShared,
       });
+      logEvent(EventType.SYSTEM, {category: 'import', detail: puzzleSeed});
       alert(`Successfully imported ${name}'s share of ${puzzleSeed}.`);
     }
   }
