@@ -6,6 +6,7 @@ const path = require('path');
 const FontPreloadPlugin = require('webpack-font-preload-plugin');
 const WorkboxPlugin = require('workbox-webpack-plugin');
 
+let debugMode = true;
 const baseConfig = {
   entry: './src/bootstrap.js',
   output: {
@@ -48,7 +49,15 @@ const baseConfig = {
     }),
     new CopyPlugin({
       patterns: [
-        {from: './src/index.html', to: __dirname + '/dist'},
+        {
+          from: './src/index.html',
+          to: __dirname + '/dist',
+          transform(content) {
+            return content
+              .toString()
+              .replaceAll('$debugMode', String(debugMode));
+          },
+        },
         {from: '../icons', to: __dirname + '/dist'},
         {from: '../wordgrid.webmanifest', to: __dirname + '/dist'},
         {from: '../words-v1.txt', to: __dirname + '/dist'},
@@ -61,7 +70,8 @@ const baseConfig = {
 
 module.exports = (_env, argv) => {
   let config = baseConfig;
-  if (argv.mode === 'development') {
+  debugMode = argv.mode === 'development'
+  if (debugMode) {
     config = {
       ...config,
       devServer: {
