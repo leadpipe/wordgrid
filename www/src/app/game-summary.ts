@@ -431,7 +431,7 @@ export class GameSummary extends LitElement {
     if (changedProperties.has('record')) {
       this.loadGame();
     }
-    if (this.expanded && !this.shareAs) {
+    if (this.expanded && !this.shareAs && !changedProperties.has('shownPath')) {
       await 0; // Wait for the next microtask
       if (this.shareAsInput) {
         this.shareAsInput.select();
