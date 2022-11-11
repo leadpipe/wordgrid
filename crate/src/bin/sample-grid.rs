@@ -14,7 +14,7 @@ fn main() {
   let words = build_words_from_file("../words-v1.txt");
   let duration = start.elapsed();
   println!("{} words loaded in {:?}", words.count(), duration);
-  for i in 0..100 {
+  for i in 0..10 {
     let seed = format!("test{}", &i);
     let mut random = new_random(&seed);
     let grid = Grid::new(&words, 6, &mut random);
