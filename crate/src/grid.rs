@@ -5,7 +5,7 @@ use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
 use crate::{
   words::{WordCategory, Words},
-  JsRandom,
+  JsRandom, WordsNode,
 };
 
 /// The square grid of characters in which to find words.
@@ -78,9 +78,10 @@ impl Grid {
   /// min_length letters.
   pub fn find_words(&self, words: &Words, min_length: usize) -> HashMap<String, WordCategory> {
     let mut answer = HashMap::new();
+    let node = words.root_node();
 
     for index in 0..self.cells.len() {
-      self.collect_words(words, min_length, index, "", 0, &mut answer);
+      self.collect_words(&node, min_length, index, 0, &mut answer);
     }
 
     answer
@@ -104,10 +105,9 @@ impl Grid {
   /// "qu" words in addition to plain "q" words.
   fn collect_words(
     &self,
-    words: &Words,
+    node: &WordsNode,
     min_length: usize,
     index: usize,
-    prefix: &str,
     seen: u64,
     found: &mut HashMap<String, WordCategory>,
   ) {
@@ -116,32 +116,31 @@ impl Grid {
       return;
     }
     let seen = seen | bit;
-    let mut prefix = String::from(prefix);
     let ch = self.cells[index];
-    prefix.push(ch);
-    self.collect_words_2(words, min_length, index, prefix.as_str(), seen, found);
+    let prefix = node.append_char(ch);
+    let node = node.child_node(&prefix);
+    self.collect_words_2(&node, min_length, index, seen, found);
     if ch == 'q' {
-      prefix.push('u');
-      self.collect_words_2(words, min_length, index, prefix.as_str(), seen, found);
+      let prefix = node.append_char('u');
+      self.collect_words_2(&node.child_node(&prefix), min_length, index, seen, found);
     }
   }
 
   /// Helper helper.
   fn collect_words_2(
     &self,
-    words: &Words,
+    node: &WordsNode,
     min_length: usize,
     index: usize,
-    prefix: &str,
     seen: u64,
     found: &mut HashMap<String, WordCategory>,
   ) {
-    if prefix.len() >= min_length {
-      if let Some(category) = words.word_category(prefix) {
-        found.insert(prefix.to_string(), category);
+    if node.prefix.len() >= min_length {
+      if let Some(category) = node.category() {
+        found.insert(node.prefix.to_string(), category);
       }
     }
-    if words.is_strict_prefix(prefix) {
+    if node.has_other_words() {
       let (row, col) = self.row_col(index);
       let size = self.size as i32;
       for (rd, cd) in DELTAS {
@@ -149,7 +148,7 @@ impl Grid {
         let col = col + cd;
         if row >= 0 && row < size && col >= 0 && col < size {
           let index = self.index(row, col);
-          self.collect_words(words, min_length, index, prefix, seen, found);
+          self.collect_words(node, min_length, index, seen, found);
         }
       }
     }

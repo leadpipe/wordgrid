@@ -1,6 +1,6 @@
 use multiset::HashMultiSet;
 use qp_trie::wrapper::BString;
-use qp_trie::Trie;
+use qp_trie::{SubTrie, Trie};
 use rand::distributions::WeightedIndex;
 use rand::prelude::Rng;
 use rand_distr::Distribution;
@@ -20,6 +20,11 @@ pub struct WordsBuilder {
   trie: Trie<BString, WordCategory>,
   letter_counts: HashMultiSet<char>,
   partial_line: Vec<u8>,
+}
+
+pub struct WordsNode<'a> {
+  pub prefix: &'a str,
+  subtrie: SubTrie<'a, BString, WordCategory>,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
@@ -170,27 +175,6 @@ impl Words {
     WordsBuilder::new()
   }
 
-  /// Returns the category of the word, if it is indeed in the set of words.
-  pub fn word_category(&self, word: &str) -> Option<WordCategory> {
-    self.trie.get_str(word).and_then(|&cat| Some(cat))
-  }
-
-  /// Tells whether the given query string is a strict prefix of any words,
-  /// meaning there is at least one word longer than the query string that
-  /// starts with it.
-  pub fn is_strict_prefix(&self, query: &str) -> bool {
-    let sub = self.trie.subtrie_str(query);
-    if sub.is_empty() {
-      false
-    } else if !self.trie.contains_key_str(query) {
-      true
-    } else {
-      let mut iter = sub.iter();
-      iter.next(); // The query string
-      iter.next().is_some()
-    }
-  }
-
   /// The number of words in the dictionary.
   pub fn count(&self) -> usize {
     self.trie.count()
@@ -206,6 +190,55 @@ impl Words {
   /// in the dictionary.
   pub fn choose_letter<R: Rng>(&self, rng: &mut R) -> char {
     self.letters[self.letter_dist.sample(rng)]
+  }
+
+  /// Returns the trie's root node.
+  pub fn root_node(&self) -> WordsNode {
+    WordsNode { prefix: "", subtrie: self.trie.subtrie_str("") }
+  }
+
+  /// Returns the category of the word, if it is indeed in the set of words.
+  pub fn word_category(&self, word: &str) -> Option<WordCategory> {
+    self.root_node().child_node(word).category()
+  }
+}
+
+impl <'a> WordsNode<'a> {
+  /// If this node's prefix is itself a full word, returns its category; else
+  /// returns `None`.
+  pub fn category(&self) -> Option<WordCategory> {
+    self.subtrie.get(self.prefix.as_bytes()).map(|&cat| cat)
+  }
+
+  /// Tells whether there are words in the trie that start with this node's
+  /// prefix but are longer than it.
+  pub fn has_other_words(&self) -> bool {
+    if self.subtrie.is_empty() {
+      false
+    } else if self.subtrie.get(self.prefix.as_bytes()).is_none() {
+      // We know that the subtrie is not empty, and we've just shown that this
+      // node's prefix is not itself a word, so there must be at least one word
+      // that strictly starts with this node's prefix.
+      true
+    } else {
+      let mut iter = self.subtrie.iter();
+      iter.next(); // Our prefix: we know it's in there
+      iter.next().is_some() // ...and is there at least one other word?
+    }
+  }
+
+  /// Lengthens this node's prefix with the given character.
+  pub fn append_char(&self, ch: char) -> String {
+    let mut prefix: String = self.prefix.into();
+    prefix.push(ch);
+    prefix
+  }
+
+  /// Returns the child node for the given prefix, which must be an extension of
+  /// this node's prefix.
+  pub fn child_node(&'a self, prefix: &'a str) -> WordsNode {
+    debug_assert!(prefix.starts_with(self.prefix));
+    WordsNode { prefix, subtrie: self.subtrie.subtrie(prefix.as_bytes()) }
   }
 }
 
