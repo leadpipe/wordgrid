@@ -39,7 +39,7 @@ fn main() {
   let end = args[1]
     .parse::<NaiveDate>()
     .unwrap_or_else(|_| panic!("ending-date (`{}`) must be formatted as %Y-%m-%d", args[1]));
-  let start = Local::today().naive_local();
+  let start = Local::now().date_naive();
 
   eprint!("Loading words... ");
   let load = Instant::now();
