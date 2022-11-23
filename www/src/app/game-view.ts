@@ -357,7 +357,6 @@ export class GameView extends LitElement {
   @property({reflect: true}) theme: Theme = 'light';
   @property() puzzleId: PuzzleId = PuzzleId.daily();
   @property() resumeImmediately = false;
-  @property() dialogShowing = false;
   @property() loadingWords = true;
 
   @state() private puzzle: GridResultMessage | null = null;
@@ -410,9 +409,6 @@ export class GameView extends LitElement {
   protected override updated(changedProperties: PropertyValues): void {
     if (changedProperties.has('puzzleId')) {
       this.requestAndLoadPuzzle();
-    }
-    if (changedProperties.has('dialogShowing') && this.dialogShowing) {
-      this.pausePlay();
     }
   }
 
@@ -503,7 +499,7 @@ export class GameView extends LitElement {
     logEvent(EventType.ACTION, {category: 'pause'});
   }
 
-  private pausePlay() {
+  pausePlay() {
     this.pausePlayAsync();
   }
 

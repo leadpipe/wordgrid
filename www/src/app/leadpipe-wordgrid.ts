@@ -15,6 +15,7 @@ import {
 } from '../game/wordgrid-db';
 import {requestPuzzle} from '../puzzle-service';
 import {PuzzleToPlay} from './events';
+import {GameView} from './game-view';
 import {
   getCurrentTheme,
   getPreferredTheme,
@@ -210,7 +211,6 @@ export class LeadpipeWordgrid extends LitElement {
             class="may-scroll"
             .puzzleId=${PuzzleId.fromSeed(this.puzzleSeed)}
             .resumeImmediately=${this.resumeImmediately}
-            .dialogShowing=${this.dialogShowing}
             .loadingWords=${this.loadingWords}
           ></game-view>
         `;
@@ -265,7 +265,6 @@ export class LeadpipeWordgrid extends LitElement {
   @state() resumeImmediately = false;
   @state() preferredTheme = getPreferredTheme();
   @state() showTimer = getShowTimer();
-  @state() dialogShowing = false;
   @state() loadingWords = true;
   @query('#settings') settingsDialog!: HTMLDialogElement;
 
@@ -355,6 +354,10 @@ export class LeadpipeWordgrid extends LitElement {
     }
   }
 
+  private pauseGame() {
+    this.gameView?.pausePlay();
+  }
+
   private handlePlayPuzzle(event: CustomEvent<PuzzleToPlay>) {
     this.page = 'play';
     this.puzzleSeed = event.detail.puzzleId.seed;
@@ -363,19 +366,19 @@ export class LeadpipeWordgrid extends LitElement {
   }
 
   private handleShowHistory(event: CustomEvent<PuzzleId | undefined>) {
+    this.pauseGame();
     this.page = 'history';
     this.puzzleSeed = event.detail?.seed ?? '';
     this.updateLocation();
   }
 
   private handleShowSettings() {
-    this.dialogShowing = true;
+    this.pauseGame();
     this.settingsDialog.showModal();
     logEvent(EventType.ACTION, {category: 'settings opened'});
   }
 
   private settingsClosed() {
-    this.dialogShowing = false;
     logEvent(EventType.ACTION, {category: 'settings closed'});
   }
 
