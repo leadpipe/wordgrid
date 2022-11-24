@@ -28,9 +28,11 @@ import {GameView} from './game-view';
 import {
   getCurrentTheme,
   getPreferredTheme,
+  getSeenHelp,
   getShowTimer,
   prefsTarget,
   setPreferredTheme,
+  setSeenHelp,
   setShowTimer,
 } from './prefs';
 import {decodeShareBits, decodeShareName} from './sharing';
@@ -400,6 +402,10 @@ export class LeadpipeWordgrid extends LitElement {
     this.startApp();
 
     refreshDaily(this);
+
+    if (!getSeenHelp()) {
+      window.setTimeout(() => void this.handleShowHelp());
+    }
   }
 
   private readonly themeHandler = (event: CustomEvent<Theme>) => {
@@ -518,6 +524,7 @@ export class LeadpipeWordgrid extends LitElement {
   private helpClosed() {
     this.hideDialog();
     logEvent(EventType.ACTION, {category: 'help closed'});
+    setSeenHelp();
   }
 
   private handleShowSettings() {

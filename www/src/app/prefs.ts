@@ -109,3 +109,20 @@ export function useMoniker(moniker: string) {
   monikers = [...mru];
   window.localStorage.setItem('monikers', JSON.stringify(monikers));
 }
+
+let seenHelp = false;
+{
+  const stored = window.localStorage.getItem('seenHelp');
+  if (stored === 'true') {
+    seenHelp = true;
+  }
+}
+
+export function getSeenHelp(): boolean {
+  return seenHelp;
+}
+
+export function setSeenHelp() {
+  seenHelp = true;
+  window.localStorage.setItem('seenHelp', 'true');
+}
