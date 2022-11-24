@@ -98,9 +98,9 @@ game.
 
 ## History
 
-The history page shows all the games you've played, arranged by when you last
-played them. You can resume paused games, and see what words you found in any
-game.
+The history page shows all the games you've played recently, arranged by when
+you last played them. You can resume paused games, and see what words you found
+in any game.
 
 After you quit a game, it's considered complete. When you expand a complete
 game, you can see the grid and _all_ the words that appear within it, arranged
