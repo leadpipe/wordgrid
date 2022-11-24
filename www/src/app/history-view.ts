@@ -96,15 +96,14 @@ class HistoryView extends LitElement {
 
   private async scrollToExpandedSummary() {
     await 0;
+    const skipScroll = !this.gameRecordsByDate || !this.expandedPuzzle;
     const atTop =
-      !this.gameRecordsByDate ||
-      !this.expandedPuzzle ||
-      this.gameRecordsByDate.values().next()?.value[0].puzzleId ===
-        this.expandedPuzzle;
+      this.gameRecordsByDate?.values().next()?.value[0].puzzleId ===
+      this.expandedPuzzle;
     const item = this.shadowRoot?.querySelector('game-summary[expanded]');
     if (item && !atTop) {
       item.scrollIntoView({behavior: 'smooth'});
-    } else {
+    } else if (!skipScroll) {
       this.scrollTo(0, 0);
     }
   }
