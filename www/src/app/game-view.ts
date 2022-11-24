@@ -6,7 +6,7 @@ import './meta-panel';
 import './solution-word';
 
 import {css, html, LitElement, PropertyValues} from 'lit';
-import {customElement, property, state} from 'lit/decorators.js';
+import {customElement, property, query, state} from 'lit/decorators.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {EventType, logEvent} from '../analytics';
 import {requestPuzzle} from '../puzzle-service';
@@ -358,6 +358,7 @@ export class GameView extends LitElement {
   @property() puzzleId: PuzzleId = PuzzleId.daily();
   @property() resumeImmediately = false;
   @property() loadingWords = true;
+  @query('#found') found?: HTMLElement;
 
   @state() private puzzle: GridResultMessage | null = null;
   private gameState: GameState | null = null;
@@ -568,6 +569,7 @@ export class GameView extends LitElement {
     );
     this.clearPendingWordsTimeout();
     if (this.pendingWordsJudgements.some(j => j === WordJudgement.WORD)) {
+      this.found?.scrollTo({left: 0, behavior: 'smooth'});
       this.saveGame();
       if (this.gameState?.isComplete) {
         this.redirectToHistory();
