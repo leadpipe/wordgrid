@@ -250,9 +250,7 @@ export class LeadpipeWordgrid extends LitElement {
         </div>
         <div class="dialog-header">For more information</div>
         <div>
-          <a
-            href="https://github.com/leadpipe/wordgrid/#readme"
-            target="_blank"
+          <a href="https://github.com/leadpipe/wordgrid/#readme" target="_blank"
             ><mat-icon name="info"></mat-icon> Read site overview</a
           >
         </div>
@@ -338,7 +336,7 @@ export class LeadpipeWordgrid extends LitElement {
     const cls = this.helpOption === option ? 'selected' : '';
     return html`
       <span class=${cls}
-        ><a @click=${this.setHelpOption} data-option=${option} tabindex="-1"
+        ><a @click=${this.setHelpOption} data-option=${option} tabindex="0"
           >${word}</a
         ></span
       >
