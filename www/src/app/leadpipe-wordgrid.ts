@@ -1,12 +1,16 @@
 import './events';
 import './game-view';
+import './grid-view';
 import './history-view';
 import './mat-icon';
+import './solution-word';
 
 import {css, html, LitElement, TemplateResult} from 'lit';
 import {customElement, property, query, state} from 'lit/decorators.js';
 import {EventType, logEvent} from '../analytics';
 import {gameSpecByName} from '../game/game-spec';
+import {locAt} from '../game/loc';
+import {Path} from '../game/paths';
 import {PuzzleId, toIsoDateString} from '../game/puzzle-id';
 import {
   isGameComplete,
@@ -14,6 +18,11 @@ import {
   sameWordsWereFound,
 } from '../game/wordgrid-db';
 import {requestPuzzle} from '../puzzle-service';
+import {
+  FromWorkerMessageType,
+  GridResultMessage,
+  ToWorkerMessageType,
+} from '../worker/worker-types';
 import {PuzzleToPlay} from './events';
 import {GameView} from './game-view';
 import {
@@ -86,6 +95,36 @@ async function refreshDaily(root: LeadpipeWordgrid) {
 
 logEvent(EventType.SYSTEM, {category: 'page loaded'});
 
+const EXAMPLE_PUZZLE_SEED = '1:1776-07-04:4:1';
+const EXAMPLE_PUZZLE_ID = PuzzleId.fromSeed(EXAMPLE_PUZZLE_SEED);
+const EXAMPLE_PUZZLE: GridResultMessage = {
+  type: FromWorkerMessageType.GRID,
+  message: {
+    type: ToWorkerMessageType.MAKE_GRID,
+    version: 1,
+    seed: EXAMPLE_PUZZLE_SEED,
+    size: 4,
+    minLength: 3,
+  },
+  grid: ['TLHS', 'GTTS', 'AEOE', 'CSPB'],
+  words: new Map(),
+};
+const EXAMPLE_PATH_STOPS: Path = {
+  locs: [locAt(0, 3), locAt(1, 2), locAt(2, 2), locAt(3, 2), locAt(3, 1)],
+};
+const EXAMPLE_PATH_GATEPOST: Path = {
+  locs: [
+    locAt(1, 0),
+    locAt(2, 0),
+    locAt(1, 1),
+    locAt(2, 1),
+    locAt(3, 2),
+    locAt(2, 2),
+    locAt(1, 3),
+    locAt(1, 2),
+  ],
+};
+
 /** Top-level component. */
 @customElement('leadpipe-wordgrid')
 export class LeadpipeWordgrid extends LitElement {
@@ -120,6 +159,9 @@ export class LeadpipeWordgrid extends LitElement {
         background: var(--background);
         color: var(--text-color);
         padding: 4px 4px 12px;
+        margin-top: 64px;
+        max-width: 360px;
+        max-height: calc(95vh - 64px);
       }
 
       dialog > * {
@@ -136,13 +178,13 @@ export class LeadpipeWordgrid extends LitElement {
         color: var(--text-color);
       }
 
-      #close-settings {
+      .close {
         display: block;
         text-align: right;
         padding-right: 0;
       }
 
-      .settings-header {
+      .dialog-header {
         margin: 8px 0px 4px;
         padding-left: 8px;
         border-bottom: 1px solid gray;
@@ -152,54 +194,119 @@ export class LeadpipeWordgrid extends LitElement {
       .selected {
         background: var(--highlight-background);
       }
+
+      .examples {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      #help grid-view {
+        width: 200px;
+        height: 200px;
+        flex: 0 0 auto;
+      }
     `,
   ];
 
   override render() {
-    return [
-      html`
-        <dialog
-          id="settings"
-          @close=${this.settingsClosed}
-          @keydown=${this.handleSettingsKey}
-        >
-          <a id="close-settings" @click=${this.closeSettings} title="Close"
-            ><mat-icon name="clear"></mat-icon
-          ></a>
-          <div class="settings-header">New puzzle</div>
-          <div>
-            ${this.renderNewPuzzleButton('Small')}
-            ${this.renderNewPuzzleButton('Medium')}
-            ${this.renderNewPuzzleButton('Large')}
+    return [this.dialogRenderer?.call(this), this.renderPage()];
+  }
+
+  private renderHelpDialog(): TemplateResult {
+    return html`
+      <dialog
+        id="help"
+        @close=${this.helpClosed}
+        @keydown=${this.handleDialogKey}
+      >
+        <a class="close" @click=${this.closeDialog} title="Close"
+          ><mat-icon name="clear"></mat-icon
+        ></a>
+        <div class="dialog-header">How to play Wordgrid</div>
+        <div class="may-scroll">
+          <ul>
+            <li>Find as many words as you can before the timer runs out.</li>
+            <li>
+              Trace letters through the grid, and lift your finger to mark a
+              word.
+            </li>
+            <li>Or type, and hit Enter to mark a word.</li>
+          </ul>
+          <div class="examples">
+            Example words: ${this.renderHelpOption('STOPS', 0)}
+            ${this.renderHelpOption('GATEPOST', 1)}
+            <grid-view
+              theme=${this.theme}
+              padding="10"
+              .isPaused=${false}
+              .puzzleId=${EXAMPLE_PUZZLE_ID}
+              .puzzle=${EXAMPLE_PUZZLE}
+              .externalPath=${this.helpOption === 0
+                ? EXAMPLE_PATH_STOPS
+                : EXAMPLE_PATH_GATEPOST}
+            ></grid-view>
           </div>
-          <div class="settings-header">Theme</div>
-          ${this.renderThemeChoice('Light', 'light_mode')}
-          ${this.renderThemeChoice('Dark', 'dark_mode')}
-          ${this.renderThemeChoice('Auto', 'contrast')}
-          <div class="settings-header">Timer</div>
-          ${this.renderTimerChoice(true, 'visibility')}
-          ${this.renderTimerChoice(false, 'visibility_off')}
-          <div class="settings-header">Meta</div>
-          <div>
-            <a
-              href="https://github.com/leadpipe/wordgrid/issues/new"
-              target="_blank"
-              title="File a bug report"
-              ><mat-icon name="bug_report"></mat-icon> Report a bug</a
-            >
-          </div>
-          <div>
-            <a
-              href="https://github.com/leadpipe/wordgrid/#readme"
-              target="_blank"
-              title="Help"
-              ><mat-icon name="help"></mat-icon> Read help</a
-            >
-          </div>
-        </dialog>
-      `,
-      this.renderPage(),
-    ];
+        </div>
+        <div class="dialog-header">For more information</div>
+        <div>
+          <a
+            href="https://github.com/leadpipe/wordgrid/#readme"
+            target="_blank"
+            ><mat-icon name="info"></mat-icon> Read site overview</a
+          >
+        </div>
+      </dialog>
+    `;
+  }
+
+  private renderSettingsDialog(): TemplateResult {
+    return html`
+      <dialog
+        id="settings"
+        @close=${this.settingsClosed}
+        @keydown=${this.handleDialogKey}
+      >
+        <a class="close" @click=${this.closeDialog} title="Close"
+          ><mat-icon name="clear"></mat-icon
+        ></a>
+        <div class="dialog-header">New puzzle</div>
+        <div>
+          ${this.renderNewPuzzleButton('Small')}
+          ${this.renderNewPuzzleButton('Medium')}
+          ${this.renderNewPuzzleButton('Large')}
+        </div>
+        <div class="dialog-header">Theme</div>
+        ${this.renderThemeChoice('Light', 'light_mode')}
+        ${this.renderThemeChoice('Dark', 'dark_mode')}
+        ${this.renderThemeChoice('Auto', 'contrast')}
+        <div class="dialog-header">Timer</div>
+        ${this.renderTimerChoice(true, 'visibility')}
+        ${this.renderTimerChoice(false, 'visibility_off')}
+        <div class="dialog-header">Meta</div>
+        <div>
+          <a @click=${this.handleShowHelp} title="Help"
+            ><mat-icon name="help"></mat-icon> How to play</a
+          >
+        </div>
+        <div>
+          <a
+            href="https://github.com/leadpipe/wordgrid/#readme"
+            target="_blank"
+            title="Overview"
+            ><mat-icon name="info"></mat-icon> Read site overview</a
+          >
+        </div>
+        <div>
+          <a
+            href="https://github.com/leadpipe/wordgrid/issues/new"
+            target="_blank"
+            title="File a bug report"
+            ><mat-icon name="bug_report"></mat-icon> Report a bug</a
+          >
+        </div>
+      </dialog>
+    `;
   }
 
   private renderPage(): TemplateResult {
@@ -225,6 +332,17 @@ export class LeadpipeWordgrid extends LitElement {
       default:
         ensureExhaustiveSwitch(this.page);
     }
+  }
+
+  private renderHelpOption(word: string, option: number) {
+    const cls = this.helpOption === option ? 'selected' : '';
+    return html`
+      <span class=${cls}
+        ><a @click=${this.setHelpOption} data-option=${option} tabindex="-1"
+          >${word}</a
+        ></span
+      >
+    `;
   }
 
   private renderThemeChoice(themeTitle: string, icon: string) {
@@ -266,13 +384,17 @@ export class LeadpipeWordgrid extends LitElement {
   @state() preferredTheme = getPreferredTheme();
   @state() showTimer = getShowTimer();
   @state() loadingWords = true;
-  @query('#settings') settingsDialog!: HTMLDialogElement;
+  @state() dialogRenderer?: (this: LeadpipeWordgrid) => TemplateResult;
+  @state() helpOption = 0;
+  @query('game-view') gameView?: GameView;
+  @query('dialog') dialog?: HTMLDialogElement;
 
   private readonly db = openWordgridDb();
 
   constructor() {
     super();
     this.addEventListener('play-puzzle', event => this.handlePlayPuzzle(event));
+    this.addEventListener('show-help', () => this.handleShowHelp());
     this.addEventListener('show-history', e => this.handleShowHistory(e));
     this.addEventListener('show-settings', () => this.handleShowSettings());
 
@@ -359,6 +481,7 @@ export class LeadpipeWordgrid extends LitElement {
   }
 
   private handlePlayPuzzle(event: CustomEvent<PuzzleToPlay>) {
+    this.pauseGame();
     this.page = 'play';
     this.puzzleSeed = event.detail.puzzleId.seed;
     this.resumeImmediately = event.detail.resume ?? false;
@@ -372,17 +495,44 @@ export class LeadpipeWordgrid extends LitElement {
     this.updateLocation();
   }
 
-  private handleShowSettings() {
+  private async showDialog(
+    dialogRenderer: (this: LeadpipeWordgrid) => TemplateResult
+  ) {
     this.pauseGame();
-    this.settingsDialog.showModal();
+    this.dialogRenderer = dialogRenderer;
+    await 0;
+    this.dialog?.showModal();
+  }
+
+  private hideDialog() {
+    this.dialogRenderer = undefined;
+  }
+
+  private closeDialog() {
+    this.dialog?.close();
+  }
+
+  private handleShowHelp() {
+    this.showDialog(this.renderHelpDialog);
+    logEvent(EventType.ACTION, {category: 'help opened'});
+  }
+
+  private helpClosed() {
+    this.hideDialog();
+    logEvent(EventType.ACTION, {category: 'help closed'});
+  }
+
+  private handleShowSettings() {
+    this.showDialog(this.renderSettingsDialog);
     logEvent(EventType.ACTION, {category: 'settings opened'});
   }
 
   private settingsClosed() {
+    this.hideDialog();
     logEvent(EventType.ACTION, {category: 'settings closed'});
   }
 
-  private handleSettingsKey(event: KeyboardEvent) {
+  private handleDialogKey(event: KeyboardEvent) {
     switch (event.key) {
       case 'Tab':
       case 'Escape':
@@ -395,8 +545,8 @@ export class LeadpipeWordgrid extends LitElement {
     event.stopImmediatePropagation();
   }
 
-  private closeSettings() {
-    this.settingsDialog.close();
+  private setHelpOption(event: Event) {
+    this.helpOption = Number(this.findData(event, 'option'));
   }
 
   private setPreferredTheme(event: Event) {
@@ -428,7 +578,7 @@ export class LeadpipeWordgrid extends LitElement {
   }
 
   private async newPuzzle(event: Event) {
-    this.closeSettings();
+    this.closeDialog();
     const name = (event.target as HTMLElement).dataset.name!;
     const spec = gameSpecByName(name);
     let nextPuzzleId = PuzzleId.forSpec(spec);

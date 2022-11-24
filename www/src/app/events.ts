@@ -59,6 +59,11 @@ declare global {
     'show-settings': CustomEvent<void>;
 
     /**
+     * Sent by meta-panel when the user clicks the help icon.
+     */
+     'show-help': CustomEvent<void>;
+
+     /**
      * Sent by game-summary when it has loaded its game.
      */
     'game-loaded': CustomEvent<PuzzleId>;
