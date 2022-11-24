@@ -19,10 +19,7 @@ export class GameState {
   private readonly found = new Set<string>();
   private readonly reverseFound: string[] = [];
   private readonly categories: readonly wasm.WordCategory[];
-  readonly wordsByCategory: ReadonlyMap<
-    wasm.WordCategory,
-    ReadonlySet<string>
-  >;
+  readonly wordsByCategory: ReadonlyMap<wasm.WordCategory, ReadonlySet<string>>;
   private readonly points: Counts;
   /** The points for all the words found before the deadline.s */
   private earnedPointsCache = 0;
@@ -356,7 +353,9 @@ export class GameState {
    * Stops the clock for this game, if it was previously running.
    */
   pause() {
-    this.lastPlayedTimestamp = Date.now();
+    if (this.isStarted) {
+      this.lastPlayedTimestamp = Date.now();
+    }
     if (!this.isPaused) {
       this.priorElapsedMs = this.elapsedMs;
       this.resumedTimestamp = 0;
