@@ -94,13 +94,19 @@ class HistoryView extends LitElement {
     }
   }
 
-  private scrollToExpandedSummary() {
-    window.setTimeout(() => {
-      const item = this.shadowRoot?.querySelector('game-summary[expanded]');
-      if (item) {
-        item.scrollIntoView({behavior: 'smooth'});
-      }
-    });
+  private async scrollToExpandedSummary() {
+    await 0;
+    const atTop =
+      !this.gameRecordsByDate ||
+      !this.expandedPuzzle ||
+      this.gameRecordsByDate.values().next()?.value[0].puzzleId ===
+        this.expandedPuzzle;
+    const item = this.shadowRoot?.querySelector('game-summary[expanded]');
+    if (item && !atTop) {
+      item.scrollIntoView({behavior: 'smooth'});
+    } else {
+      this.scrollTo(0, 0);
+    }
   }
 
   private async loadGames() {
