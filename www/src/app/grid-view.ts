@@ -353,24 +353,29 @@ export class GridView extends LitElement {
     }
   }
   override updated(changedProperties: PropertyValues) {
+    let reset = false;
     let redraw = false;
     if (changedProperties.has('puzzleId')) {
+      reset = true;
       redraw = true;
-      this.resetPointerInput();
       this.calcMetrics();
     }
-    if (changedProperties.has('externalPath')) {
+    if (changedProperties.has('puzzle') || changedProperties.has('isPaused')) {
+      reset = true;
       redraw = true;
     }
-    if (changedProperties.has('puzzle') || changedProperties.has('isPaused')) {
+    if (changedProperties.has('externalPath')) {
+      reset = false;
       redraw = true;
-      this.resetPointerInput();
     }
     if (changedProperties.has('theme')) {
       if (this.canvas) {
         this.updateBackground();
         redraw = true;
       }
+    }
+    if (reset) {
+      this.resetPointerInput();
     }
     if (redraw && this.ctx) {
       this.draw();
