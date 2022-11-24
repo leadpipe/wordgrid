@@ -71,7 +71,7 @@ confers. There is also a link to look the word up.
 
 On the left side of the grid, below the summary of how far you are through the
 puzzle, you can expand a list of your found words arranged by category. Each
-category containing any words in the puzzle appears, with stats pertaning to
+category containing any words in the puzzle appears, with stats pertaining to
 that category.
 
 ## Game sizes
