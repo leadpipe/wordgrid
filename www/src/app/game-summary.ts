@@ -67,7 +67,7 @@ export class GameSummary extends LitElement {
         margin: 0 8px;
       }
 
-      @media (min-height: 700px) and (max-width: 550px) {
+      @media (max-width: 550px) {
         #complete {
           flex-direction: column;
         }
