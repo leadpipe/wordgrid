@@ -1,7 +1,9 @@
-LEADPIPE WORDGRID is a word-finding game that runs in your web browser. Trace
+[LEADPIPE WORDGRID] is a word-finding game that runs in your web browser. Trace
 through neighboring letters in the grid, in any direction, to form words. Each
 valid word is worth points. Accumulate as many points as possible before the
 timer runs out — or turn off the timer and just look for words at your leisure.
+
+[LEADPIPE WORDGRID]: https://leadpipe.github.io/wordgrid
 
 # Game play
 
