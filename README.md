@@ -9,10 +9,10 @@ Start (![start]), pause (![pause]), and resume (![resume]) the game using the
 controls below the grid. To quit a game, pause it and hit the smaller Stop
 control (![stop]) to the right below the grid.
 
-![start]: https://raw.githubusercontent.com/google/material-design-icons/master/src/action/not_started/materialicons/24px.svg
-![pause]: https://raw.githubusercontent.com/google/material-design-icons/master/src/av/pause_circle/materialicons/24px.svg
-![resume]: https://raw.githubusercontent.com/google/material-design-icons/master/src/av/play_circle/materialicons/24px.svg
-![stop]: https://raw.githubusercontent.com/google/material-design-icons/master/src/av/stop_circle/materialicons/24px.svg
+[start]: https://raw.githubusercontent.com/google/material-design-icons/master/src/action/not_started/materialicons/24px.svg
+[pause]: https://raw.githubusercontent.com/google/material-design-icons/master/src/av/pause_circle/materialicons/24px.svg
+[resume]: https://raw.githubusercontent.com/google/material-design-icons/master/src/av/play_circle/materialicons/24px.svg
+[stop]: https://raw.githubusercontent.com/google/material-design-icons/master/src/av/stop_circle/materialicons/24px.svg
 
 On a device with a keyboard, you can type the space bar to pause or resume the
 game.
