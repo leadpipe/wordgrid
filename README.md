@@ -87,7 +87,7 @@ Wordgrid has small, medium, and large games:
 ## Daily game
 
 Each day a new game appears, in one of the sizes. Everybody gets the same daily
-game. You may play it or not.
+game.
 
 ## History
 
