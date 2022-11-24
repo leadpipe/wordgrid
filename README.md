@@ -5,12 +5,6 @@ timer runs out — or turn off the timer and just look for words at your leisure
 
 # Game play
 
-<style>
-  a > img {
-    vertical-align: bottom;
-  }
-</style>
-
 Start (![start]), pause (![pause]), and resume (![resume]) the game using the
 controls below the grid. To quit a game, pause it and hit the smaller Stop
 control (![stop]) to the right below the grid.
