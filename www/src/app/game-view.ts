@@ -241,7 +241,8 @@ export class GameView extends LitElement {
         ${gameState
           ? html`
               <div>
-                <b>${gameState.puzzleId.spec.minLength}</b> or more letters per word.
+                <b>${gameState.puzzleId.spec.minLength}</b> or more letters per
+                word.
                 <br class="opt-break" />
                 ${getShowTimer()
                   ? html`
