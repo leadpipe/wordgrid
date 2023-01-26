@@ -55,7 +55,10 @@ const baseConfig = {
           transform(content) {
             return content
               .toString()
-              .replaceAll('$debugMode', String(debugMode));
+              .replaceAll(
+                '$debugMode',
+                debugMode ? `{'debug_mode': 'true'}` : '{}'
+              );
           },
         },
         {from: '../icons', to: __dirname + '/dist'},
@@ -70,7 +73,7 @@ const baseConfig = {
 
 module.exports = (_env, argv) => {
   let config = baseConfig;
-  debugMode = argv.mode === 'development'
+  debugMode = argv.mode === 'development';
   if (debugMode) {
     config = {
       ...config,
