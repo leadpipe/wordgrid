@@ -13,7 +13,7 @@ import {locAt} from '../game/loc';
 import {Path} from '../game/paths';
 import {PuzzleId, toIsoDateString} from '../game/puzzle-id';
 import {
-  isGameComplete,
+  isWordsComplete,
   openWordgridDb,
   sameWordsWereFound,
 } from '../game/wordgrid-db';
@@ -626,18 +626,16 @@ export class LeadpipeWordgrid extends LitElement {
       await this.importShare(puzzleSeed, pathParts);
     } else {
       const db = await this.db;
-      const dailyRecord = await db.get('games', dailySeed);
       const mostRecentCursor = await db
         .transaction('games')
         .store.index('by-last-played')
         .openCursor(null, 'prev');
-      const mostRecentSeed = mostRecentCursor?.value.puzzleId;
       if (
-        mostRecentSeed &&
-        (isGameComplete(dailyRecord) ||
-          toIsoDateString(mostRecentCursor.key) === dailyId.dateString)
+        mostRecentCursor &&
+        toIsoDateString(mostRecentCursor.key) === dailyId.dateString &&
+        !isWordsComplete(mostRecentCursor.value.wordsFound)
       ) {
-        this.puzzleSeed = mostRecentSeed;
+        this.puzzleSeed = mostRecentCursor.value.puzzleId;
       } else {
         this.puzzleSeed = dailySeed;
       }
