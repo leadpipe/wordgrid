@@ -12,7 +12,7 @@ import {EventType, logEvent} from '../analytics';
 import {requestPuzzle} from '../puzzle-service';
 import {GridResultMessage} from '../worker/worker-types';
 import {GameState} from '../game/game-state';
-import {PuzzleId} from '../game/puzzle-id';
+import {PuzzleId, toIsoDateString} from '../game/puzzle-id';
 import {WordJudgement} from '../game/types';
 import {openWordgridDb} from '../game/wordgrid-db';
 import {InputWords} from './events';
@@ -367,20 +367,26 @@ export class GameView extends LitElement {
 
   private readonly foregroundnessHandler = () => {
     if (document.visibilityState !== 'visible') {
-      this.pausePlay();
+      this.pausePlay('foregroundness');
     }
   };
 
   private readonly windowBlurHandler = () => {
-    this.pausePlay();
+    this.pausePlay('window blur');
   };
 
+  private lastInteraction = new Date();
+  private noteInteraction() {
+    this.lastInteraction = new Date();
+  }
+
   private readonly spacebarHandler = (event: KeyboardEvent) => {
+    this.noteInteraction();
     if (event.key === ' ') {
       if (this.gameState?.isPaused) {
         this.resumePlay();
       } else {
-        this.pausePlay();
+        this.pausePlay('spacebar');
       }
     }
   };
@@ -494,15 +500,26 @@ export class GameView extends LitElement {
     logEvent(EventType.ACTION, {category: 'resume'});
   }
 
-  private async pausePlayAsync() {
-    this.gameState?.pause();
+  private async pausePlayAsync(timestamp?: number) {
+    this.gameState?.pause(timestamp);
     this.requestUpdate();
     await this.saveGame();
     logEvent(EventType.ACTION, {category: 'pause'});
   }
 
-  pausePlay() {
-    this.pausePlayAsync();
+  pausePlay(why: string) {
+    const now = new Date();
+    const today = toIsoDateString(now);
+    const activeDate = toIsoDateString(this.lastInteraction);
+    let timestamp = now.getTime();
+    if (today !== activeDate) {
+      // All of this date-checking is another attempt to squash the bug where
+      // leaving yesterday's puzzle going brings that puzzle back today instead
+      // of going to today's daily puzzle.
+      timestamp = this.lastInteraction.getTime();
+      logEvent(EventType.ACTION, {category: 'pause-next-day', detail: why});
+    }
+    this.pausePlayAsync(timestamp);
   }
 
   private async quit() {
@@ -513,6 +530,7 @@ export class GameView extends LitElement {
   }
 
   private rotatePuzzle(_event: Event) {
+    this.noteInteraction();
     const {puzzle} = this;
     if (puzzle) {
       const reversedRows = [...puzzle.grid].reverse();
@@ -529,6 +547,7 @@ export class GameView extends LitElement {
   }
 
   private flipPuzzle(_event: Event) {
+    this.noteInteraction();
     const {puzzle} = this;
     if (puzzle) {
       const grid = puzzle.grid.map(row => row.split('').reverse().join(''));
@@ -552,6 +571,7 @@ export class GameView extends LitElement {
   }
 
   private wordsTraced(event: CustomEvent<InputWords>) {
+    this.noteInteraction();
     this.pendingWords = event.detail.words;
     this.pendingWordsJudgements = event.detail.words.map(
       word =>
@@ -562,6 +582,7 @@ export class GameView extends LitElement {
   }
 
   private wordsSelected(event: CustomEvent<InputWords>) {
+    this.noteInteraction();
     this.pendingWords = event.detail.words;
     this.pendingWordsJudgements = event.detail.words.map(
       word =>

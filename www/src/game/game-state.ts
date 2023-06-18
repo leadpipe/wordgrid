@@ -352,9 +352,9 @@ export class GameState {
   /**
    * Stops the clock for this game, if it was previously running.
    */
-  pause() {
+  pause(timestamp?: number) {
     if (this.isStarted) {
-      this.lastPlayedTimestamp = Date.now();
+      this.lastPlayedTimestamp = timestamp ?? Date.now();
     }
     if (!this.isPaused) {
       this.priorElapsedMs = this.elapsedMs;

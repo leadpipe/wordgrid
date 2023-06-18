@@ -480,12 +480,12 @@ export class LeadpipeWordgrid extends LitElement {
     }
   }
 
-  private pauseGame() {
-    this.gameView?.pausePlay();
+  private pauseGame(why: string) {
+    this.gameView?.pausePlay(why);
   }
 
   private handlePlayPuzzle(event: CustomEvent<PuzzleToPlay>) {
-    this.pauseGame();
+    this.pauseGame('play event');
     this.page = 'play';
     this.puzzleSeed = event.detail.puzzleId.seed;
     this.resumeImmediately = event.detail.resume ?? false;
@@ -493,7 +493,7 @@ export class LeadpipeWordgrid extends LitElement {
   }
 
   private handleShowHistory(event: CustomEvent<PuzzleId | undefined>) {
-    this.pauseGame();
+    this.pauseGame('history event');
     this.page = 'history';
     this.puzzleSeed = event.detail?.seed ?? '';
     this.updateLocation();
@@ -502,7 +502,7 @@ export class LeadpipeWordgrid extends LitElement {
   private async showDialog(
     dialogRenderer: (this: LeadpipeWordgrid) => TemplateResult
   ) {
-    this.pauseGame();
+    this.pauseGame('show dialog');
     this.dialogRenderer = dialogRenderer;
     await 0;
     this.dialog?.showModal();
