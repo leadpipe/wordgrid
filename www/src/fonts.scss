@@ -2,19 +2,15 @@
 @use "@fontsource/merriweather-sans/scss/mixins" as MerriweatherSans;
 @use "@fontsource/prompt/scss/mixins" as Prompt;
 
-@include MaterialIcons.fontFaceCustom(
-  $weight: 400,
+@include MaterialIcons.faces(
+  $weights: (400),
   $display: block,
 );
-@include MerriweatherSans.fontFaceCustom(
-  $weight: 800,
+@include MerriweatherSans.faces(
+  $weights: (800),
   $display: block,
 );
-@include Prompt.fontFaceCustom(
-  $weight: 400,
-  $display: block,
-);
-@include Prompt.fontFaceCustom(
-  $weight: 700,
+@include Prompt.faces(
+  $weights: (400, 700),
   $display: block,
 );
