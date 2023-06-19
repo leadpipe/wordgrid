@@ -1,6 +1,6 @@
 use std::num::Wrapping;
 
-use base64::{decode_config, encode_config, URL_SAFE_NO_PAD};
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::JsRandom;
@@ -18,7 +18,7 @@ pub fn obfuscate(bytes: &[u8], rng: &mut JsRandom) -> String {
     })
     .collect();
   xored_bytes.push(sum.0 ^ rng.next_byte());
-  encode_config(xored_bytes, URL_SAFE_NO_PAD)
+  URL_SAFE_NO_PAD.encode(xored_bytes)
 }
 
 /// Reverses the obfuscation of `obfuscate` by decoding the URL-safe base64
@@ -30,7 +30,7 @@ pub fn obfuscate(bytes: &[u8], rng: &mut JsRandom) -> String {
 #[wasm_bindgen]
 pub fn deobfuscate(input: String, rng: &mut JsRandom) -> Result<Vec<u8>, String> {
   let mut sum = Wrapping(0u8);
-  let mut xored_bytes = decode_config(input, URL_SAFE_NO_PAD)
+  let mut xored_bytes = URL_SAFE_NO_PAD.decode(input)
     .map_err(|err| format!("Base64 decode error {:?}", err))?;
   let check = xored_bytes.pop().ok_or("Missing check byte")?;
   let encoded: Vec<u8> = xored_bytes
@@ -170,7 +170,7 @@ mod tests {
   }
 
   #[test]
-  #[should_panic(expected = "InvalidLastSymbol")]
+  #[should_panic(expected = "InvalidPadding")]
   fn test_bad_deobfuscate_input_padding() {
     deobfuscate("abcdef==".to_string(), &mut JsRandom::new("seed")).unwrap();
   }

@@ -16,7 +16,7 @@ pub fn new_random(seed: &str) -> Random {
 
 /// The alias for Random we expose to JS.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[repr(C)]
+#[repr(C, align(16))]
 #[wasm_bindgen]
 pub struct JsRandom([u32; size_of::<Random>() / size_of::<u32>()]);
 
