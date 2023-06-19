@@ -2,11 +2,12 @@ import './game-summary';
 
 import {css, html, LitElement, PropertyValues} from 'lit';
 import {customElement, property, state} from 'lit/decorators.js';
+import {PuzzleId} from '../game/puzzle-id';
 import {GameRecord, openWordgridDb} from '../game/wordgrid-db';
+import {GameSummary} from './game-summary';
 import {HISTORY_PADDING_PX, MAY_SCROLL_CLASS} from './styles';
 import {Theme} from './types';
 import {noteUsage} from './usage';
-import {PuzzleId} from '../game/puzzle-id';
 
 /**
  * Shows the history of games played, and may expand one game to show its
@@ -41,7 +42,7 @@ class HistoryView extends LitElement {
   ];
 
   protected override render() {
-    const {gameRecordsByDate, expandedPuzzle} = this;
+    const {gameRecordsByDate, expandedPuzzle, selectShareAs} = this;
     if (!gameRecordsByDate) return 'Loading games...';
     return html` <meta-panel></meta-panel>
       ${[...gameRecordsByDate.entries()].map(
@@ -55,6 +56,7 @@ class HistoryView extends LitElement {
                     <game-summary
                       theme=${this.theme}
                       .expanded=${expandedPuzzle === record.puzzleId}
+                      .selectShareAs=${selectShareAs}
                       .record=${record}
                       @game-loaded=${this.handleGameLoaded}
                     ></game-summary>
@@ -71,6 +73,9 @@ class HistoryView extends LitElement {
 
   // The puzzle that's expanded, if there is one.
   @property() expandedPuzzle: string = '';
+
+  /** Whether to select the "share as" input in the expanded summary. */
+  @property() selectShareAs = false;
 
   // The games to display.
   @state() private gameRecordsByDate: ReadonlyMap<string, GameRecord[]> | null =
@@ -101,7 +106,11 @@ class HistoryView extends LitElement {
       this.gameRecordsByDate?.values().next()?.value[0].puzzleId ===
       this.expandedPuzzle;
     const item = this.shadowRoot?.querySelector('game-summary[expanded]');
-    if (item && !atTop) {
+    const complete =
+      item instanceof GameSummary ? item.completeBlock : undefined;
+    if (complete) {
+      complete.scrollIntoView({behavior: 'smooth'});
+    } else if (item && !atTop) {
       item.scrollIntoView({behavior: 'smooth'});
     } else if (!skipScroll) {
       this.scrollTo(0, 0);

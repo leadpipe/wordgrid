@@ -415,6 +415,7 @@ export class GameSummary extends LitElement {
 
   @property({reflect: true}) theme: Theme = 'light';
   @property({type: Boolean, reflect: true}) expanded = false;
+  @property() selectShareAs = false;
   @property() record: GameRecord | null = null;
 
   @state() game: GameState | null = null;
@@ -426,12 +427,18 @@ export class GameSummary extends LitElement {
   @state() shareBack = false;
   @query('#share-text-input') shareTextInput: HTMLInputElement | undefined;
   @query('#share-as') shareAsInput: HTMLInputElement | undefined;
+  @query('#complete') completeBlock: HTMLElement | undefined;
 
   protected override async updated(changedProperties: PropertyValues) {
     if (changedProperties.has('record')) {
       this.loadGame();
     }
-    if (this.expanded && !this.shareAs && !changedProperties.has('shownPath')) {
+    if (
+      this.expanded &&
+      this.selectShareAs &&
+      !this.shareAs &&
+      !changedProperties.has('shownPath')
+    ) {
       await 0; // Wait for the next microtask
       if (this.shareAsInput) {
         this.shareAsInput.select();
@@ -586,7 +593,7 @@ export class GameSummary extends LitElement {
       await saveGame(await this.db, this.game);
       this.dispatchEvent(
         new CustomEvent('show-history', {
-          detail: this.game.puzzleId,
+          detail: {puzzleId: this.game.puzzleId, selectShareAs: false},
           bubbles: true,
           composed: true,
         })
@@ -600,7 +607,7 @@ export class GameSummary extends LitElement {
     const target = this.expanded ? undefined : this.game?.puzzleId;
     this.dispatchEvent(
       new CustomEvent('show-history', {
-        detail: target,
+        detail: {puzzleId: target, selectShareAs: true},
         bubbles: true,
         composed: true,
       })

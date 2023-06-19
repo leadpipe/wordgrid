@@ -621,7 +621,7 @@ export class GameView extends LitElement {
   private redirectToHistory() {
     this.dispatchEvent(
       new CustomEvent('show-history', {
-        detail: this.puzzleId,
+        detail: {puzzleId: this.puzzleId},
         bubbles: true,
         composed: true,
       })

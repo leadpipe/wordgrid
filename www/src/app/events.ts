@@ -16,6 +16,13 @@ export interface PuzzleToPlay {
   readonly resume?: boolean;
 }
 
+export interface HistoryToShow {
+  /** The ID of the puzzle to expand in the history list, or undefined. */
+  readonly puzzleId: PuzzleId | undefined;
+  /** If true, select the "share as" input field for the expanded puzzle. */
+  readonly selectShareAs?: boolean;
+}
+
 declare global {
   interface HTMLElementEventMap {
     /**
@@ -38,7 +45,7 @@ declare global {
      * Sent to initiate a switch to the history page, maybe with a puzzle's
      * entry expanded.
      */
-    'show-history': CustomEvent<PuzzleId | undefined>;
+    'show-history': CustomEvent<HistoryToShow>;
 
     /**
      * Sent by solution-word when the user clicks on a word to expand it, and

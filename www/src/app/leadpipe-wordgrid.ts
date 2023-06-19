@@ -23,7 +23,7 @@ import {
   GridResultMessage,
   ToWorkerMessageType,
 } from '../worker/worker-types';
-import {PuzzleToPlay} from './events';
+import {HistoryToShow, PuzzleToPlay} from './events';
 import {GameView} from './game-view';
 import {
   getCurrentTheme,
@@ -327,6 +327,7 @@ export class LeadpipeWordgrid extends LitElement {
             theme=${this.theme}
             class="may-scroll"
             expandedPuzzle=${this.puzzleSeed}
+            .selectShareAs=${this.selectShareAs}
           ></history-view>
         `;
       default:
@@ -380,6 +381,7 @@ export class LeadpipeWordgrid extends LitElement {
 
   @state() page: Page = 'play';
   @state() puzzleSeed: string = dailyPuzzleId.seed;
+  @state() selectShareAs = false;
   @state() resumeImmediately = false;
   @state() preferredTheme = getPreferredTheme();
   @state() showTimer = getShowTimer();
@@ -492,10 +494,11 @@ export class LeadpipeWordgrid extends LitElement {
     this.updateLocation();
   }
 
-  private handleShowHistory(event: CustomEvent<PuzzleId | undefined>) {
+  private handleShowHistory(event: CustomEvent<HistoryToShow>) {
     this.pauseGame('history event');
     this.page = 'history';
-    this.puzzleSeed = event.detail?.seed ?? '';
+    this.puzzleSeed = event.detail?.puzzleId?.seed ?? '';
+    this.selectShareAs = Boolean(event.detail?.selectShareAs);
     this.updateLocation();
   }
 
