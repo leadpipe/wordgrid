@@ -75,7 +75,7 @@ class HistoryView extends LitElement {
   @property() expandedPuzzle: string = '';
 
   /** Whether to select the "share as" input in the expanded summary. */
-  @property() selectShareAs = false;
+  @property({type: Boolean}) selectShareAs = false;
 
   // The games to display.
   @state() private gameRecordsByDate: ReadonlyMap<string, GameRecord[]> | null =
