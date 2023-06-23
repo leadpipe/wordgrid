@@ -415,8 +415,8 @@ export class GameSummary extends LitElement {
 
   @property({reflect: true}) theme: Theme = 'light';
   @property({type: Boolean, reflect: true}) expanded = false;
-  @property() selectShareAs = false;
-  @property() record: GameRecord | null = null;
+  @property({type: Boolean}) selectShareAs = false;
+  @property({attribute: false}) record: GameRecord | null = null;
 
   @state() game: GameState | null = null;
   shares: SharedGameState[] = [];

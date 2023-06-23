@@ -72,6 +72,7 @@ export class GridView extends LitElement {
 
   /** The ID of the puzzle we are displaying (or will display). */
   @property({
+    attribute: false,
     hasChanged: (value: PuzzleId | null, oldValue: PuzzleId | null) => {
       if (value === oldValue) return false;
       if (value && oldValue && value.seed === oldValue.seed) return false;
@@ -81,9 +82,9 @@ export class GridView extends LitElement {
   puzzleId: PuzzleId | null = null;
 
   /** The puzzle we're displaying. */
-  @property() puzzle: GridResultMessage | null = null;
+  @property({attribute: false}) puzzle: GridResultMessage | null = null;
 
-  @property() isPaused = true;
+  @property({type: Boolean}) isPaused = true;
 
   @property({type: Boolean, reflect: true}) isInteractive = false;
 
@@ -92,7 +93,7 @@ export class GridView extends LitElement {
     this.trail.push(...path.locs);
     this.requestUpdate('externalPath', {locs: []});
   }
-  @property() get externalPath(): Path {
+  @property({attribute: false}) get externalPath(): Path {
     return {locs: this.trail};
   }
 

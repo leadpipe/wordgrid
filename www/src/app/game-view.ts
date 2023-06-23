@@ -346,7 +346,7 @@ export class GameView extends LitElement {
               <solution-word
                 word=${word}
                 theme=${this.theme}
-                .category=${this.puzzle!.words.get(word)!}
+                .category=${this.puzzle!.words.get(word) ?? null}
               ></solution-word>
             </div>
           `
@@ -356,9 +356,9 @@ export class GameView extends LitElement {
   }
 
   @property({reflect: true}) theme: Theme = 'light';
-  @property() puzzleId: PuzzleId = PuzzleId.daily();
-  @property() resumeImmediately = false;
-  @property() loadingWords = true;
+  @property({attribute: false}) puzzleId: PuzzleId = PuzzleId.daily();
+  @property({type: Boolean}) resumeImmediately = false;
+  @property({type: Boolean}) loadingWords = true;
   @query('#found') found?: HTMLElement;
 
   @state() private puzzle: GridResultMessage | null = null;

@@ -45,7 +45,7 @@ export class SolutionWord extends LitElement {
   }
 
   @property() word = '';
-  @property() category: wasm.WordCategory | null = null;
+  @property({type: Number}) category: wasm.WordCategory | null = null;
   @property() theme: Theme = 'light';
 
   @state() open = false;

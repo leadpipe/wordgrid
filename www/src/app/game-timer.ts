@@ -40,7 +40,7 @@ export class GameTimer extends LitElement {
     `;
   }
 
-  @property() gameState: GameState | null = null;
+  @property({attribute: false}) gameState: GameState | null = null;
   private timerRunning = false;
 
   protected override updated(_changedProperties: PropertyValues): void {
