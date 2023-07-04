@@ -298,6 +298,9 @@ export class GridView extends LitElement {
 
   private handlePointerDown(event: PointerEvent) {
     if (!this.shouldInteract()) return;
+    if ((event.target as Element).hasPointerCapture(event.pointerId)) {
+      (event.target as Element).releasePointerCapture(event.pointerId);
+    }
     const loc = this.convertPointToLoc(event);
     if (loc && this.puzzle) {
       this.resetPointerInput(); // Should be unnecessary
