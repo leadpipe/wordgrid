@@ -1,9 +1,9 @@
 import './events';
 import './game-timer';
-import './grid-view';
 import './mat-icon';
 import './meta-panel';
 import './solution-word';
+import './grid-view';
 
 import {css, html, LitElement, PropertyValues} from 'lit';
 import {customElement, property, query, state} from 'lit/decorators.js';
@@ -26,11 +26,6 @@ import {MAY_SCROLL_CLASS} from './styles';
 import {Theme, ThemeOrAuto} from './types';
 import {renderCount, renderCounts, saveGame, sleepMs} from './utils';
 
-/**
- * Number of pixels we tell the grid-view to pad itself.
- */
-const GRID_VIEW_PADDING = 10;
-
 /** Encapsulates the entire game page. */
 @customElement('game-view')
 export class GameView extends LitElement {
@@ -49,13 +44,11 @@ export class GameView extends LitElement {
         grid-template-rows: min-content auto;
         gap: var(--page-grid-gap);
         --page-grid-gap: 8px;
-        --grid-view-padding: ${GRID_VIEW_PADDING}px;
         --grid-spec-size: 6;
         --grid-optimal-cell-side-extent: 80px;
         --below-grid-height: 80px;
         --grid-optimal-width: calc(
-          var(--grid-spec-size) * var(--grid-optimal-cell-side-extent) + 2 *
-            var(--grid-view-padding)
+          var(--grid-spec-size) * var(--grid-optimal-cell-side-extent) + 40px
         );
         --grid-optimal-height: calc(
           var(--grid-optimal-width) + var(--below-grid-height)
@@ -158,7 +151,7 @@ export class GameView extends LitElement {
         flex: 1 1 0;
       }
 
-      @media (max-width: 700px) {
+      @media (max-width: 800px) {
         :host {
           --grid-side-extent: min(
             var(--base-grid-side-extent),
@@ -261,7 +254,6 @@ export class GameView extends LitElement {
       <div id="grid">
         <grid-view
           theme=${theme}
-          padding="${GRID_VIEW_PADDING}"
           isInteractive
           .isPaused=${gameState?.isPaused ?? true}
           .puzzleId=${this.puzzleId}

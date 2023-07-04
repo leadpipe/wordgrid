@@ -1,14 +1,13 @@
 import './events';
 
-import {css, html, LitElement, PropertyValues} from 'lit';
+import {css, html, LitElement, nothing, PropertyValues, svg} from 'lit';
 import {customElement, property, state} from 'lit/decorators.js';
 import {ref} from 'lit/directives/ref.js';
 import {PuzzleId} from '../game/puzzle-id';
 import {Loc, locAt} from '../game/loc';
 import {Path} from '../game/paths';
 import {GridResultMessage} from '../worker/worker-types';
-import {Point, Theme} from './types';
-import {sleepMs} from './utils';
+import {Theme} from './types';
 import {
   BOTH_THEMES_BORDER,
   DARK_BLUE,
@@ -18,11 +17,6 @@ import {
   LIGHT_BLUE_TRANSPARENT,
   LIGHT_THEME_TEXT,
 } from './styles';
-
-/** The font for the letters in the grid. */
-const FONT = 'Merriweather Sans';
-/** The font weight for the letters in the grid. */
-const FONT_WEIGHT = 800;
 
 /**
  * Displays a word grid puzzle.
@@ -35,40 +29,124 @@ export class GridView extends LitElement {
         display: flex;
         align-items: center;
         justify-content: center;
-        background-color: var(--gf);
       }
 
-      canvas {
+      svg {
         overflow: hidden;
         touch-action: none;
+      }
+
+      circle {
+        fill: none;
+        stroke: ${BOTH_THEMES_BORDER};
+      }
+
+      text {
+        font: 800 6.5px 'Merriweather Sans';
+        dominant-baseline: central;
+        text-anchor: middle;
+        user-select: none;
+      }
+
+      :host([isPaused]) text {
+        fill: orange;
+      }
+
+      :host([theme='light']:not([isPaused])) text {
+        fill: ${LIGHT_THEME_TEXT};
+      }
+
+      :host([theme='dark']:not([isPaused])) text {
+        fill: ${DARK_THEME_TEXT};
+      }
+
+      :host([theme='light']) .path-start {
+        fill: ${LIGHT_BLUE};
+      }
+
+      :host([theme='dark']) .path-start {
+        fill: ${DARK_BLUE};
+      }
+
+      .path {
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 2px;
+      }
+
+      :host([theme='light']) .path {
+        stroke: ${LIGHT_BLUE_TRANSPARENT};
+      }
+
+      :host([theme='dark']) .path {
+        stroke: ${DARK_BLUE_TRANSPARENT};
       }
     `,
   ];
 
   override render() {
-    const {sideSpan: sideSize} = this;
-    const cssSize = sideSize / devicePixelRatio;
+    const {cellSpan, hoverLoc, isPaused, puzzle, puzzleId, trail} = this;
+    if (!cellSpan || !puzzleId) return;
+    const gameSize = puzzleId.spec.size;
+    const sideSize = 10 * gameSize; // Each cell is 10 units
+    const grid = isPaused || !puzzle ? this.pausedGrid(gameSize) : puzzle.grid;
+    const pathStartLoc = hoverLoc ?? trail[0];
+    const strokeWidth = 10 / cellSpan;
+    const radius = 5 - strokeWidth / 2;
     return html`
-      <canvas
-        ${ref(this.canvasChanged)}
-        width=${sideSize}
-        height=${sideSize}
-        style="width: ${cssSize}px; height: ${cssSize}px;"
+      <svg
+        ${ref(this.svgChanged)}
+        viewBox="0 0 ${sideSize} ${sideSize}"
         @pointerenter=${this.handlePointerEnter}
         @pointermove=${this.handlePointerHovering}
         @pointerleave=${this.handlePointerLeave}
         @pointercancel=${this.handlePointerCancel}
         @pointerdown=${this.handlePointerDown}
         @pointerup=${this.handlePointerUp}
-      ></canvas>
+      >
+        <style>
+          circle {
+            stroke-width: ${strokeWidth}px;
+          }
+        </style>
+        ${puzzleId.spec.locs.map(loc => {
+          const {row, col} = loc;
+          let letter = grid[row].charAt(col);
+          if (letter === 'Q') letter = 'Qu';
+          const x = col * 10 + 5;
+          const y = row * 10 + 5;
+          const cls = loc === pathStartLoc ? 'path-start' : '';
+          return svg`
+            <circle cx=${x} cy=${y} r=${radius} class=${cls} />
+            <text x=${x} y=${y} data-row=${row} data-col=${col}>${letter}</text>
+          `;
+        })}
+        ${this.renderTrail(trail)}
+      </svg>
     `;
+  }
+
+  private renderTrail(trail: Loc[]) {
+    if (!trail.length) return nothing;
+    const parts = [
+      svg`
+      <path
+        class="path"
+        d="M ${trail[0].col * 10 + 5},${trail[0].row * 10 + 5}
+           ${trail
+             .map(({row, col}) => {
+               return `L ${col * 10 + 5},${row * 10 + 5}`;
+             })
+             .join(' ')}
+        " />
+    `,
+    ];
+    return parts;
   }
 
   /** Light or dark mode. */
   @property({reflect: true}) theme: Theme = 'light';
-
-  /** Minimum padding on all 4 sides of the component around the grid. */
-  @property({type: Number}) padding = 20;
 
   /** The ID of the puzzle we are displaying (or will display). */
   @property({
@@ -84,7 +162,7 @@ export class GridView extends LitElement {
   /** The puzzle we're displaying. */
   @property({attribute: false}) puzzle: GridResultMessage | null = null;
 
-  @property({type: Boolean}) isPaused = true;
+  @property({type: Boolean, reflect: true}) isPaused = true;
 
   @property({type: Boolean, reflect: true}) isInteractive = false;
 
@@ -101,10 +179,7 @@ export class GridView extends LitElement {
     this.handleKeyDown(event);
 
   private readonly resizeObserver = new ResizeObserver(async () => {
-    if (!this.canvas) return;
     this.calcMetrics();
-    await sleepMs(0); // Wait for the re-render to update the size of the canvas before redrawing.
-    this.draw();
   });
 
   override connectedCallback(): void {
@@ -121,14 +196,9 @@ export class GridView extends LitElement {
     window.removeEventListener('keydown', this.keyHandler);
   }
 
-  private canvas!: HTMLCanvasElement;
-  private ctx!: CanvasRenderingContext2D;
-  private canvasChanged(canvas?: Element) {
-    if (canvas instanceof HTMLCanvasElement) {
-      this.canvas = canvas;
-      this.ctx = canvas.getContext('2d')!;
+  private svgChanged(svg?: Element) {
+    if (svg instanceof SVGElement) {
       this.calcMetrics();
-      this.draw();
     }
   }
 
@@ -137,10 +207,10 @@ export class GridView extends LitElement {
   }
 
   /** The possible input location the pointer last hovered over. */
-  private hoverLoc?: Loc;
+  @state() private hoverLoc?: Loc;
 
   /** The current trail of selected locations. */
-  private readonly trail: Loc[] = [];
+  @state() private trail: Loc[] = [];
 
   /**
    * The strings being traced out by the trail.  Normally this is just one
@@ -149,23 +219,13 @@ export class GridView extends LitElement {
    */
   private readonly prefixes: string[] = [];
 
-  private convertCoordinateToCellNumber(coord: number): number | undefined {
-    const {sideSpan, puzzleId} = this;
-    if (coord < 0 || coord >= sideSpan || !puzzleId) return undefined;
-    return Math.floor(coord / (sideSpan / puzzleId.spec.size));
-  }
-
-  private convertPointToLoc(point: {x: number; y: number}): Loc | undefined {
-    const rect = this.canvas.getBoundingClientRect();
-    const locX = (point.x - rect.x) * devicePixelRatio;
-    const locY = (point.y - rect.y) * devicePixelRatio;
-    const col = this.convertCoordinateToCellNumber(locX);
-    const row = this.convertCoordinateToCellNumber(locY);
-    if (col === undefined || row === undefined) return undefined;
-    const loc = locAt(row, col);
-    const [x, y] = this.cellCenter(loc);
-    const dist = Math.hypot(locX - x, locY - y);
-    return dist <= (this.cellSpan / 2) * 0.9 ? loc : undefined;
+  private convertPointToLoc(event: PointerEvent): Loc | undefined {
+    const data = (event.target as HTMLElement | null)?.dataset;
+    if (data && 'row' in data) {
+      const {row, col} = data;
+      return locAt(Number(row), Number(col));
+    }
+    return undefined;
   }
 
   /**
@@ -175,12 +235,13 @@ export class GridView extends LitElement {
   private pushLoc(loc: Loc | undefined) {
     const {puzzle, trail, prefixes} = this;
     if (!puzzle || !loc) return;
-    const index = this.trail.indexOf(loc);
+    const index = trail.indexOf(loc);
     if (index >= 0) {
       // This location is already in use.  If it's the second-to-last one, undo
       // the last location.
       if (index === trail.length - 2) {
         trail.pop();
+        this.trail = [...trail];
         if (prefixes[0].endsWith('Q')) {
           prefixes.length /= 2; // Toss the extra U-ending prefixes.
         }
@@ -196,7 +257,7 @@ export class GridView extends LitElement {
     if (trail.length && !loc.isAdjacentTo(trail[trail.length - 1])) {
       return;
     }
-    trail.push(loc);
+    this.trail = [...trail, loc];
     const char = puzzle.grid[loc.row].charAt(loc.col);
     if (prefixes.length) {
       for (let i = 0; i < prefixes.length; ++i) {
@@ -224,7 +285,6 @@ export class GridView extends LitElement {
     } else {
       this.hoverLoc = undefined;
     }
-    this.draw();
   }
 
   private handlePointerEnter(event: PointerEvent) {
@@ -233,16 +293,13 @@ export class GridView extends LitElement {
 
   private handlePointerLeave(_event: PointerEvent) {
     this.hoverLoc = undefined;
-    this.draw();
   }
 
-  private handlePointerCancel(event: PointerEvent) {
-    this.canvas?.releasePointerCapture(event.pointerId);
+  private handlePointerCancel(_event: PointerEvent) {
     this.dispatchEvent(
       new CustomEvent('words-selected', {detail: {words: []}})
     );
     this.resetPointerInput();
-    this.draw();
   }
 
   private handlePointerDown(event: PointerEvent) {
@@ -253,25 +310,21 @@ export class GridView extends LitElement {
       this.pendingKeyboardInput = '';
       this.pushLoc(loc);
       this.hoverLoc = undefined;
-      this.canvas.setPointerCapture(event.pointerId);
-      this.draw();
     }
   }
 
-  private handlePointerUp(event: PointerEvent) {
+  private handlePointerUp(_event: PointerEvent) {
     if (!this.shouldInteract()) return;
-    this.canvas?.releasePointerCapture(event.pointerId);
     if (this.puzzle) {
       this.dispatchEvent(
         new CustomEvent('words-selected', {detail: {words: [...this.prefixes]}})
       );
     }
     this.resetPointerInput();
-    this.draw();
   }
 
   private resetPointerInput() {
-    this.trail.length = 0;
+    this.trail = [];
     this.prefixes.length = 0;
     this.hoverLoc = undefined;
   }
@@ -355,103 +408,31 @@ export class GridView extends LitElement {
   }
   override updated(changedProperties: PropertyValues) {
     let reset = false;
-    let redraw = false;
     if (changedProperties.has('puzzleId')) {
       reset = true;
-      redraw = true;
       this.calcMetrics();
     }
     if (changedProperties.has('puzzle') || changedProperties.has('isPaused')) {
       reset = true;
-      redraw = true;
     }
     if (changedProperties.has('externalPath')) {
       reset = false;
-      redraw = true;
-    }
-    if (changedProperties.has('theme')) {
-      if (this.canvas) {
-        this.updateBackground();
-        redraw = true;
-      }
     }
     if (reset) {
       this.resetPointerInput();
     }
-    if (redraw && this.ctx) {
-      this.draw();
-    }
   }
 
-  private updateBackground() {}
-
-  /** How many pixels are in one side of the grid. */
-  @state() private sideSpan = 0;
-  /** How many pixels are on each side of a cell. */
-  private _cellSpan = 0;
-
-  get cellSpan(): number {
-    return this._cellSpan;
-  }
-
-  /**
-   * The pixel offsets of cells' centers.  There is one offset for each letter
-   * in a side: they are indexed by either row or col.
-   */
-  private centers: number[] = [];
-
-  readonly cellCenter: (loc: Loc) => Point = (loc: Loc) => {
-    const {centers} = this;
-    return [centers[loc.col], centers[loc.row]];
-  };
-
-  /** The CSS font string for the letters in the grid. */
-  private font = FONT;
-  /** How far below the center we must position letters within a cell. */
-  private textOffset = 0;
+  /** How many actual pixels are on each side of a cell. */
+  @state() private cellSpan = 0;
 
   private calcMetrics() {
     const rect = this.getBoundingClientRect();
-    const {padding, puzzleId} = this;
+    const {puzzleId} = this;
     if (!puzzleId) return;
+    const span = Math.min(rect.width, rect.height);
     const size = puzzleId.spec.size;
-    let span = Math.min(rect.width, rect.height);
-    span -= 2 * padding; // Padding is handled by centering the canvas.
-    let sideSpan = devicePixelRatio * span;
-    const cellSpan = (this._cellSpan = Math.max(
-      0,
-      Math.floor((sideSpan - size) / size)
-    ));
-    this.sideSpan = size * cellSpan;
-
-    const centers = [];
-    const half = cellSpan / 2;
-    for (let i = 0; i < size; ++i) {
-      centers[i] = cellSpan * i + half;
-    }
-    this.centers = centers;
-
-    if (this.ctx) {
-      this.setUpFonts();
-    }
-  }
-
-  private setUpFonts() {
-    const factor = 0.65;
-    const size = Math.round(this.cellSpan * factor);
-    this.font = `${FONT_WEIGHT} ${size}px ${FONT}`;
-    this.textOffset = this.calcTextOffset(this.font);
-  }
-
-  private calcTextOffset(font: string): number {
-    const {ctx} = this;
-    ctx.font = font;
-    ctx.textBaseline = 'middle';
-    const metrics = ctx.measureText('AZ');
-    // Distance from baseline to center of capital letters.
-    return Math.round(
-      (metrics.actualBoundingBoxAscent - metrics.actualBoundingBoxDescent) / 2
-    );
+    this.cellSpan = (devicePixelRatio * span) / size;
   }
 
   private pausedGrid(puzzleSize: number): string[] {
@@ -464,82 +445,6 @@ export class GridView extends LitElement {
       case 6:
         return ['  LEAD', '  PIPE', '      ', '      ', 'WORD  ', 'GRID  '];
     }
-  }
-
-  private draw() {
-    const {ctx} = this;
-    ctx.setTransform({});
-    const {width, height} = ctx.canvas;
-    ctx.clearRect(0, 0, width, height);
-
-    this.drawGrid();
-    this.drawLetters();
-    this.drawTrail();
-  }
-
-  private drawGrid() {
-    const {cellSpan, hoverLoc, trail, ctx, theme, puzzleId, cellCenter} = this;
-    if (!puzzleId) return;
-    const radius = cellSpan / 2;
-    if (hoverLoc || trail.length) {
-      ctx.fillStyle =
-        theme === 'light' ? LIGHT_BLUE.cssText : DARK_BLUE.cssText;
-      ctx.beginPath();
-      const [x, y] = cellCenter(hoverLoc || trail[0]);
-      ctx.arc(x, y, radius, 0, 2 * Math.PI);
-      ctx.fill();
-    }
-    ctx.strokeStyle = BOTH_THEMES_BORDER.cssText;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    for (const loc of puzzleId.spec.locs) {
-      const [x, y] = cellCenter(loc);
-      ctx.moveTo(x + radius, y);
-      ctx.arc(x, y, radius, 0, 2 * Math.PI);
-    }
-    ctx.stroke();
-  }
-
-  private drawLetters() {
-    const {isPaused, puzzle, puzzleId, ctx, theme, cellCenter, textOffset} =
-      this;
-    if (!puzzleId) return;
-    const grid =
-      isPaused || !puzzle ? this.pausedGrid(puzzleId.spec.size) : puzzle.grid;
-    if (grid === puzzle?.grid) {
-      ctx.fillStyle =
-        theme === 'light' ? LIGHT_THEME_TEXT.cssText : DARK_THEME_TEXT.cssText;
-    } else {
-      ctx.fillStyle = 'orange';
-    }
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.font = this.font;
-    for (const loc of puzzleId.spec.locs) {
-      let letter = grid[loc.row].charAt(loc.col);
-      if (letter === 'Q') letter = 'Qu';
-      const [x, y] = cellCenter(loc);
-      ctx.fillText(String(letter), x, y + textOffset);
-    }
-  }
-
-  private drawTrail() {
-    const {trail} = this;
-    if (!trail.length) return;
-    const {ctx, theme, cellSpan, cellCenter} = this;
-    ctx.strokeStyle =
-      theme === 'light'
-        ? LIGHT_BLUE_TRANSPARENT.cssText
-        : DARK_BLUE_TRANSPARENT.cssText;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.lineWidth = cellSpan / 6;
-    ctx.beginPath();
-    ctx.moveTo(...cellCenter(trail[0]));
-    for (const loc of trail) {
-      ctx.lineTo(...cellCenter(loc));
-    }
-    ctx.stroke();
   }
 }
 
