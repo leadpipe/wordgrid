@@ -29,6 +29,15 @@ export class GridView extends LitElement {
         display: flex;
         align-items: center;
         justify-content: center;
+        --path-start: ${LIGHT_BLUE};
+        --path: ${LIGHT_BLUE_TRANSPARENT};
+        --text-fill: ${LIGHT_THEME_TEXT};
+      }
+
+      :host([theme='dark']) {
+        --path-start: ${DARK_BLUE};
+        --path: ${DARK_BLUE_TRANSPARENT};
+        --text-fill: ${DARK_THEME_TEXT};
       }
 
       svg {
@@ -52,35 +61,20 @@ export class GridView extends LitElement {
         fill: orange;
       }
 
-      :host([theme='light']:not([isPaused])) text {
-        fill: ${LIGHT_THEME_TEXT};
+      :host(:not([isPaused])) text {
+        fill: var(--text-fill);
       }
 
-      :host([theme='dark']:not([isPaused])) text {
-        fill: ${DARK_THEME_TEXT};
-      }
-
-      :host([theme='light']) .path-start {
-        fill: ${LIGHT_BLUE};
-      }
-
-      :host([theme='dark']) .path-start {
-        fill: ${DARK_BLUE};
+      .path-start {
+        fill: var(--path-start);
       }
 
       .path {
         fill: none;
+        stroke: var(--path);
         stroke-linecap: round;
         stroke-linejoin: round;
         stroke-width: 2px;
-      }
-
-      :host([theme='light']) .path {
-        stroke: ${LIGHT_BLUE_TRANSPARENT};
-      }
-
-      :host([theme='dark']) .path {
-        stroke: ${DARK_BLUE_TRANSPARENT};
       }
     `,
   ];
