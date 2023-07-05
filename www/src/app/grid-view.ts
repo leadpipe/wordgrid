@@ -78,6 +78,7 @@ export class GridView extends LitElement {
       }
 
       .path {
+        pointer-events: none;
         fill: none;
         stroke: var(--path);
         stroke-linecap: round;
@@ -86,6 +87,7 @@ export class GridView extends LitElement {
       }
 
       .del {
+        pointer-events: none;
         fill: none;
         stroke: var(--del);
         stroke-linecap: round;
@@ -94,6 +96,7 @@ export class GridView extends LitElement {
       }
 
       .add {
+        pointer-events: none;
         fill: none;
         stroke: var(--add);
         stroke-linecap: round;
