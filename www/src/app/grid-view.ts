@@ -12,9 +12,13 @@ import {
   BOTH_THEMES_BORDER,
   DARK_BLUE,
   DARK_BLUE_TRANSPARENT,
+  DARK_GREEN_TRANSPARENT,
+  DARK_RED_TRANSPARENT,
   DARK_THEME_TEXT,
   LIGHT_BLUE,
   LIGHT_BLUE_TRANSPARENT,
+  LIGHT_GREEN_TRANSPARENT,
+  LIGHT_RED_TRANSPARENT,
   LIGHT_THEME_TEXT,
 } from './styles';
 
@@ -29,14 +33,18 @@ export class GridView extends LitElement {
         display: flex;
         align-items: center;
         justify-content: center;
-        --path-start: ${LIGHT_BLUE};
+        --add: ${LIGHT_GREEN_TRANSPARENT};
+        --del: ${LIGHT_RED_TRANSPARENT};
         --path: ${LIGHT_BLUE_TRANSPARENT};
+        --path-start: ${LIGHT_BLUE};
         --text-fill: ${LIGHT_THEME_TEXT};
       }
 
       :host([theme='dark']) {
-        --path-start: ${DARK_BLUE};
+        --add: ${DARK_GREEN_TRANSPARENT};
+        --del: ${DARK_RED_TRANSPARENT};
         --path: ${DARK_BLUE_TRANSPARENT};
+        --path-start: ${DARK_BLUE};
         --text-fill: ${DARK_THEME_TEXT};
       }
 
@@ -75,6 +83,22 @@ export class GridView extends LitElement {
         stroke-linecap: round;
         stroke-linejoin: round;
         stroke-width: 2px;
+      }
+
+      .del {
+        fill: none;
+        stroke: var(--del);
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 1px;
+      }
+
+      .add {
+        fill: none;
+        stroke: var(--add);
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 1px;
       }
     `,
   ];
@@ -116,12 +140,12 @@ export class GridView extends LitElement {
             <text x=${x} y=${y} data-row=${row} data-col=${col}>${letter}</text>
           `;
         })}
-        ${this.renderTrail(trail)}
+        ${this.renderTrail(trail, puzzleId.spec.locs)}
       </svg>
     `;
   }
 
-  private renderTrail(trail: Loc[]) {
+  private renderTrail(trail: Loc[], locs: readonly Loc[]) {
     if (!trail.length) return nothing;
     const parts = [
       svg`
@@ -136,6 +160,36 @@ export class GridView extends LitElement {
         " />
     `,
     ];
+    if (this.isInteractive) {
+      if (trail.length > 1) {
+        // If you move over the 2nd-to-last location, we delete the last
+        // location from the trail.
+        const {row, col} = trail[trail.length - 2];
+        parts.push(svg`
+        <path
+          class="del"
+          d="M ${col * 10 + 3},${row * 10 + 3}
+             l 4,4
+             m -4,0
+             l 4,-4
+          "/>
+      `);
+      }
+      const used = new Set(trail);
+      const head = trail[trail.length - 1];
+      for (const loc of locs) {
+        if (used.has(loc) || !loc.isAdjacentTo(head)) continue;
+        parts.push(svg`
+        <path
+          class="add"
+          d="M ${loc.col * 10 + 5},${loc.row * 10 + 2}
+             l 0,6
+             m -3,-3
+             l 6,0
+          "/>
+      `);
+      }
+    }
     return parts;
   }
 

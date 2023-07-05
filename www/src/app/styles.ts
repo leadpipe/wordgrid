@@ -14,6 +14,24 @@ export const DARK_BLUE_TRANSPARENT = css`
   ${DARK_BLUE}c
 `;
 
+export const LIGHT_GREEN = css`#2a6914`;
+export const LIGHT_GREEN_TRANSPARENT = css`
+  ${LIGHT_GREEN}33
+`;
+export const DARK_GREEN = css`#4dbc24`;
+export const DARK_GREEN_TRANSPARENT = css`
+  ${DARK_GREEN}44
+`;
+
+export const LIGHT_RED = css`#e3280b`;
+export const LIGHT_RED_TRANSPARENT = css`
+  ${LIGHT_RED}44
+`;
+export const DARK_RED = css`#971e0b`;
+export const DARK_RED_TRANSPARENT = css`
+  ${DARK_RED}44
+`;
+
 export const BOTH_THEMES_BORDER = css`#808080`;
 
 export const HISTORY_PADDING_PX = 8;
