@@ -7,6 +7,7 @@ import './grid-view';
 
 import {css, html, LitElement, PropertyValues} from 'lit';
 import {customElement, property, query, state} from 'lit/decorators.js';
+import {classMap} from 'lit/directives/class-map.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {EventType, logEvent} from '../analytics';
 import {requestPuzzle} from '../puzzle-service';
@@ -25,6 +26,11 @@ import {
 import {MAY_SCROLL_CLASS} from './styles';
 import {Theme, ThemeOrAuto} from './types';
 import {renderCount, renderCounts, saveGame, sleepMs} from './utils';
+
+interface GridTransition {
+  className: string;
+  updateGrid: () => void;
+}
 
 /** Encapsulates the entire game page. */
 @customElement('game-view')
@@ -124,6 +130,16 @@ export class GameView extends LitElement {
       grid-view {
         width: var(--grid-side-extent);
         height: var(--grid-side-extent);
+      }
+
+      grid-view.rotate {
+        transform: rotate(90deg);
+        transition: transform 0.15s;
+      }
+
+      grid-view.flip {
+        transform: scale(-1, 1);
+        transition: transform 0.15s;
       }
 
       #grid {
@@ -254,12 +270,14 @@ export class GameView extends LitElement {
       <div id="grid">
         <grid-view
           theme=${theme}
+          class=${classMap(this.gridTransitionClasses)}
           isInteractive
           .isPaused=${gameState?.isPaused ?? true}
           .puzzleId=${this.puzzleId}
           .puzzle=${this.puzzle}
           @words-traced=${this.wordsTraced}
           @words-selected=${this.wordsSelected}
+          @transitionend=${this.handleGridTransition}
         ></grid-view>
         <div id="below-grid">
           ${this.loadingWords
@@ -386,6 +404,29 @@ export class GameView extends LitElement {
   private readonly showTimerHandler = () => {
     this.requestUpdate();
   };
+
+  private readonly gridTransitionQueue: GridTransition[] = [];
+  private pendingGridTransition?: GridTransition;
+  @state() private gridTransitionClasses: Record<string, boolean> = {};
+  private handleGridTransition(_event: Event) {
+    const {pendingGridTransition} = this;
+    if (pendingGridTransition) {
+      const gridTransitionClasses = {...this.gridTransitionClasses};
+      delete gridTransitionClasses[pendingGridTransition.className];
+      this.gridTransitionClasses = gridTransitionClasses;
+      this.pendingGridTransition = undefined;
+      pendingGridTransition.updateGrid();
+    }
+    setTimeout(() => this.runGridTransition());
+  };
+
+  private runGridTransition() {
+    if (this.pendingGridTransition) return;
+    if (!this.gridTransitionQueue.length) return;
+    this.pendingGridTransition = this.gridTransitionQueue.shift();
+    this.gridTransitionClasses = {...this.gridTransitionClasses};
+    this.gridTransitionClasses[this.pendingGridTransition?.className!] = true;
+  }
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -523,32 +564,44 @@ export class GameView extends LitElement {
 
   private rotatePuzzle(_event: Event) {
     this.noteInteraction();
-    const {puzzle} = this;
-    if (puzzle) {
-      const reversedRows = [...puzzle.grid].reverse();
-      const grid = [];
-      for (let i = 0; i < reversedRows.length; ++i) {
-        grid.push(reversedRows.map(row => row.charAt(i)).join(''));
-      }
-      this.puzzle = {
-        ...puzzle,
-        grid,
-      };
-      logEvent(EventType.ACTION, {category: 'rotate'});
-    }
+    this.gridTransitionQueue.push({
+      className: 'rotate',
+      updateGrid: () => {
+        const {puzzle} = this;
+        if (puzzle) {
+          const reversedRows = [...puzzle.grid].reverse();
+          const grid = [];
+          for (let i = 0; i < reversedRows.length; ++i) {
+            grid.push(reversedRows.map(row => row.charAt(i)).join(''));
+          }
+          this.puzzle = {
+            ...puzzle,
+            grid,
+          };
+          logEvent(EventType.ACTION, {category: 'rotate'});
+        }
+      },
+    });
+    this.runGridTransition();
   }
 
   private flipPuzzle(_event: Event) {
     this.noteInteraction();
-    const {puzzle} = this;
-    if (puzzle) {
-      const grid = puzzle.grid.map(row => row.split('').reverse().join(''));
-      this.puzzle = {
-        ...puzzle,
-        grid,
-      };
-      logEvent(EventType.ACTION, {category: 'flip'});
-    }
+    this.gridTransitionQueue.push({
+      className: 'flip',
+      updateGrid: () => {
+        const {puzzle} = this;
+        if (puzzle) {
+          const grid = puzzle.grid.map(row => row.split('').reverse().join(''));
+          this.puzzle = {
+            ...puzzle,
+            grid,
+          };
+          logEvent(EventType.ACTION, {category: 'flip'});
+        }
+      },
+    });
+    this.runGridTransition();
   }
 
   @state() private pendingWords: readonly string[] = [];
