@@ -15,6 +15,7 @@ import {
   DARK_GREEN_TRANSPARENT,
   DARK_RED_TRANSPARENT,
   DARK_THEME_TEXT,
+  GRID_TRANSFORM_TRANSITION,
   LIGHT_BLUE,
   LIGHT_BLUE_TRANSPARENT,
   LIGHT_GREEN_TRANSPARENT,
@@ -71,6 +72,18 @@ export class GridView extends LitElement {
 
       :host(:not([isPaused])) text {
         fill: var(--text-fill);
+      }
+
+      :host(.rotate) text {
+        transform-origin: center;
+        transform: rotate(-90deg);
+        transition: transform ${GRID_TRANSFORM_TRANSITION};
+      }
+
+      :host(.flip) text {
+        transform-origin: center;
+        transform: scale(-1, 1);
+        transition: transform ${GRID_TRANSFORM_TRANSITION};
       }
 
       .path-start {
@@ -139,8 +152,10 @@ export class GridView extends LitElement {
           const y = row * 10 + 5;
           const cls = loc === pathStartLoc ? 'path-start' : '';
           return svg`
-            <circle cx=${x} cy=${y} r=${radius} class=${cls} />
-            <text x=${x} y=${y} data-row=${row} data-col=${col}>${letter}</text>
+            <svg viewBox="0 0 10 10" x=${col * 10} y=${row * 10} width="10" height="10">
+              <circle cx="5" cy="5" r=${radius} class=${cls} />
+              <text x="5" y="5" data-row=${row} data-col=${col}>${letter}</text>
+            </svg>
           `;
         })}
         ${this.renderTrail(trail, puzzleId.spec.locs)}

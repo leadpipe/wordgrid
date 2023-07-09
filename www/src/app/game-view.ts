@@ -23,7 +23,7 @@ import {
   prefsTarget,
   setPreferredTheme,
 } from './prefs';
-import {MAY_SCROLL_CLASS} from './styles';
+import {GRID_TRANSFORM_TRANSITION, MAY_SCROLL_CLASS} from './styles';
 import {Theme, ThemeOrAuto} from './types';
 import {renderCount, renderCounts, saveGame, sleepMs} from './utils';
 
@@ -134,12 +134,12 @@ export class GameView extends LitElement {
 
       grid-view.rotate {
         transform: rotate(90deg);
-        transition: transform 0.15s;
+        transition: transform ${GRID_TRANSFORM_TRANSITION};
       }
 
       grid-view.flip {
         transform: scale(-1, 1);
-        transition: transform 0.15s;
+        transition: transform ${GRID_TRANSFORM_TRANSITION};
       }
 
       #grid {
@@ -418,7 +418,7 @@ export class GameView extends LitElement {
       pendingGridTransition.updateGrid();
     }
     setTimeout(() => this.runGridTransition());
-  };
+  }
 
   private runGridTransition() {
     if (this.pendingGridTransition) return;

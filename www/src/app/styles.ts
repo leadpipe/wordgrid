@@ -36,6 +36,8 @@ export const BOTH_THEMES_BORDER = css`#808080`;
 
 export const HISTORY_PADDING_PX = 8;
 
+export const GRID_TRANSFORM_TRANSITION = css`200ms`;
+
 /**
  * Include this in a component's styles, then attach class="icon-button" to
  * buttons to get the right styling for buttons containing <mat-icon>s.
