@@ -1,10 +1,11 @@
 {
   "compilerOptions": {
-    "target": "ES2018",
-    "module": "ES2020",
-    "lib": ["ES2018", "DOM", "WebWorker"],
+    "target": "ES2022",
+    "module": "ES2022",
+    "lib": ["DOM", "WebWorker", "ES2022"],
     "moduleResolution": "Node",
     "esModuleInterop": true,
+    "isolatedModules": true,
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "strict": true,
@@ -14,7 +15,7 @@
     "experimentalDecorators": true,
     "noImplicitOverride": true,
     "sourceMap": true,
-    "useDefineForClassFields": false
+    "useDefineForClassFields": true
   },
   "include": [
     "./src",
