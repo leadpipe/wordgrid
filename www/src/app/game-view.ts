@@ -10,12 +10,13 @@ import {customElement, property, query, state} from 'lit/decorators.js';
 import {classMap} from 'lit/directives/class-map.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {EventType, logEvent} from '../analytics';
-import {requestPuzzle} from '../puzzle-service';
-import {GridResultMessage} from '../worker/worker-types';
+import {D4} from '../game/d4';
 import {GameState} from '../game/game-state';
 import {PuzzleId, toIsoDateString} from '../game/puzzle-id';
 import {WordJudgement} from '../game/types';
 import {openWordgridDb} from '../game/wordgrid-db';
+import {requestPuzzle} from '../puzzle-service';
+import {GridResultMessage} from '../worker/worker-types';
 import {InputWords} from './events';
 import {
   getCurrentSystemTheme,
@@ -492,7 +493,7 @@ export class GameView extends LitElement {
     } else {
       this.gameState = new GameState(puzzleId, puzzle);
     }
-    this.puzzle = puzzle;
+    this.puzzle = this.gameState.puzzle;
     if (this.gameState.isComplete) {
       this.redirectToHistory();
     } else if (this.resumeImmediately) {
@@ -567,17 +568,9 @@ export class GameView extends LitElement {
     this.gridTransitionQueue.push({
       className: 'rotate',
       updateGrid: () => {
-        const {puzzle} = this;
-        if (puzzle) {
-          const reversedRows = [...puzzle.grid].reverse();
-          const grid = [];
-          for (let i = 0; i < reversedRows.length; ++i) {
-            grid.push(reversedRows.map(row => row.charAt(i)).join(''));
-          }
-          this.puzzle = {
-            ...puzzle,
-            grid,
-          };
+        const {gameState} = this;
+        if (gameState) {
+          this.puzzle = gameState.applyD4(D4.R);
           logEvent(EventType.ACTION, {category: 'rotate'});
         }
       },
@@ -590,13 +583,9 @@ export class GameView extends LitElement {
     this.gridTransitionQueue.push({
       className: 'flip',
       updateGrid: () => {
-        const {puzzle} = this;
-        if (puzzle) {
-          const grid = puzzle.grid.map(row => row.split('').reverse().join(''));
-          this.puzzle = {
-            ...puzzle,
-            grid,
-          };
+        const {gameState} = this;
+        if (gameState) {
+          this.puzzle = gameState.applyD4(D4.F);
           logEvent(EventType.ACTION, {category: 'flip'});
         }
       },

@@ -1,5 +1,6 @@
 import * as wasm from 'wordgrid-rust';
 import {GridResultMessage} from '../worker/worker-types';
+import {D4, d4Combine, d4Flipped, d4Rotation} from './d4';
 import {Path, PathFinder} from './paths';
 import {PuzzleId} from './puzzle-id';
 import {SharedGameState} from './shared-game-state';
@@ -12,6 +13,21 @@ import {
   WordsInProgress,
 } from './wordgrid-db';
 
+/** Rotates the given grid 90 degrees clockwise. */
+function rotate(grid: readonly string[]): readonly string[] {
+  const reversedRows = [...grid].reverse();
+  const answer = [];
+  for (let i = 0; i < reversedRows.length; ++i) {
+    answer.push(reversedRows.map(row => row.charAt(i)).join(''));
+  }
+  return answer;
+}
+
+/** Flips the given grid across its vertical axis. */
+function flip(grid: readonly string[]): readonly string[] {
+  return grid.map(row => row.split('').reverse().join(''));
+}
+
 /**
  * Maintains the state of the game as it's being played.
  */
@@ -23,26 +39,25 @@ export class GameState {
   private readonly points: Counts;
   /** The points for all the words found before the deadline.s */
   private earnedPointsCache = 0;
-  /** Elapsed play time in milliseconds prior to the current period. */
-  private priorElapsedMs = 0;
   /** When the current period started, or 0. */
   private resumedTimestamp = 0;
-  private numFoundWithinTimeLimit = 0;
-  private complete = false;
   private lastPlayedTimestamp = 0;
+  private currentD4 = D4.E;
 
   constructor(
     readonly puzzleId: PuzzleId,
-    readonly puzzle: GridResultMessage,
-    priorElapsedMs = 0,
-    priorNumFoundWithinTimeLimit = 0,
+    private currentPuzzle: GridResultMessage,
+    /** Elapsed play time in milliseconds prior to the current period. */
+    private priorElapsedMs = 0,
+    private numFoundWithinTimeLimit = 0,
     previouslyFound: readonly string[] = [],
-    complete = false,
-    lastPlayed: Date | null = null
+    private complete = false,
+    lastPlayed: Date | null = null,
+    d4 = D4.E
   ) {
     const wordsByCategory = new Map<wasm.WordCategory, Set<string>>();
     let totalPoints = 0;
-    for (const [word, category] of puzzle.words.entries()) {
+    for (const [word, category] of currentPuzzle.words.entries()) {
       let words = wordsByCategory.get(category);
       if (words === undefined) {
         words = new Set();
@@ -54,16 +69,49 @@ export class GameState {
     this.wordsByCategory = wordsByCategory;
     this.points = {found: 0, total: totalPoints};
     this.categories = [...wordsByCategory.keys()].sort((a, b) => a - b);
-    this.priorElapsedMs = priorElapsedMs;
-    this.numFoundWithinTimeLimit = priorNumFoundWithinTimeLimit;
     for (const word of previouslyFound) {
       this.addPreviouslyFoundWord(word);
-      if (this.found.size <= priorNumFoundWithinTimeLimit) {
+      if (this.found.size <= numFoundWithinTimeLimit) {
         this.earnedPointsCache += GameState.scoreWord(word);
       }
     }
-    this.complete = complete;
     this.lastPlayedTimestamp = lastPlayed ? lastPlayed.getTime() : 0;
+    this.applyD4(d4);
+  }
+
+  /**
+   * Returns the D4 transform that describes how the game's current grid has
+   * been changed from the originally generated puzzle.
+   */
+  get d4(): D4 {
+    return this.currentD4;
+  }
+
+  /**
+   * Applies a D4 transform to the game's current grid, rotating and/or flipping
+   * it as necessary.  Returns the transformed puzzle.
+   * @param d4 The D4 transform to apply to the game's current grid
+   * @returns The transformed puzzle
+   */
+  applyD4(d4: D4): GridResultMessage {
+    let grid = this.currentPuzzle.grid;
+    for (let count = d4Rotation(d4); count > 0; --count) {
+      grid = rotate(grid);
+    }
+    if (d4Flipped(d4)) {
+      grid = flip(grid);
+    }
+    this.currentD4 = d4Combine(this.currentD4, d4);
+    this.pathFinder = null;
+    return (this.currentPuzzle = {...this.currentPuzzle, grid});
+  }
+
+  /**
+   * Returns the puzzle underlying this game, which may have had D4 transforms
+   * applied since it was generated.
+   */
+  get puzzle(): GridResultMessage {
+    return this.currentPuzzle;
   }
 
   static scoreWord(word: string): number {
@@ -96,7 +144,7 @@ export class GameState {
     if (this.found.has(word)) {
       return WordJudgement.DUPLICATE;
     }
-    if (this.puzzle.words.has(word)) {
+    if (this.currentPuzzle.words.has(word)) {
       return WordJudgement.WORD;
     }
     if (checkPossible && !this.isPossible(word)) {
@@ -128,7 +176,7 @@ export class GameState {
     if (!pathFinder) {
       this.pathFinder = pathFinder = new PathFinder(
         this.puzzleId.spec,
-        this.puzzle.grid
+        this.currentPuzzle.grid
       );
     }
     return pathFinder.findPaths(word);
@@ -166,7 +214,7 @@ export class GameState {
     this.reverseFound.unshift(word);
     const points = GameState.scoreWord(word);
     this.points.found += points;
-    if (this.found.size === this.puzzle.words.size) {
+    if (this.found.size === this.currentPuzzle.words.size) {
       // The last one!
       this.markComplete();
     }
@@ -177,7 +225,7 @@ export class GameState {
    * @returns The found and total counts.
    */
   getWordCounts(): Counts {
-    return {found: this.found.size, total: this.puzzle.words.size};
+    return {found: this.found.size, total: this.currentPuzzle.words.size};
   }
 
   /**
@@ -213,7 +261,7 @@ export class GameState {
   getFoundWords(category?: wasm.WordCategory): readonly string[] {
     if (category === undefined) return this.reverseFound;
     return this.reverseFound.filter(
-      word => this.puzzle.words.get(word) === category
+      word => this.currentPuzzle.words.get(word) === category
     );
   }
 
@@ -233,14 +281,14 @@ export class GameState {
    * @returns the shared game state corresponding to the given record.
    */
   toSharedGameState(record: ShareRecord): SharedGameState {
-    if (record.puzzleId !== this.puzzle.message.seed) {
+    if (record.puzzleId !== this.currentPuzzle.message.seed) {
       throw new Error(
-        `Wrong shared game: ${record.puzzleId} instead of ${this.puzzle.message.seed}`
+        `Wrong shared game: ${record.puzzleId} instead of ${this.currentPuzzle.message.seed}`
       );
     }
     return this.convertToSharedGamesState(
       record.person,
-      GameState.reconstructWords(this.puzzle, record.wordsFound)
+      GameState.reconstructWords(this.currentPuzzle, record.wordsFound)
     );
   }
 
@@ -268,9 +316,9 @@ export class GameState {
    * @returns All the words in the puzzle, or all the words in a category.
    */
   getWords(category?: wasm.WordCategory): readonly string[] {
-    if (category === undefined) return [...this.puzzle.words.keys()];
-    return [...this.puzzle.words.keys()].filter(
-      word => this.puzzle.words.get(word) === category
+    if (category === undefined) return [...this.currentPuzzle.words.keys()];
+    return [...this.currentPuzzle.words.keys()].filter(
+      word => this.currentPuzzle.words.get(word) === category
     );
   }
 
@@ -388,14 +436,14 @@ export class GameState {
     const secondWords = firstWords.splice(this.numFoundWithinTimeLimit);
     const firstBits = wordsToBitmap(
       firstWords,
-      makeWordToIndex(this.puzzle.words.keys())
+      makeWordToIndex(this.currentPuzzle.words.keys())
     );
     const answer: WordsComplete = {firstBits};
     if (secondWords.length) {
       const reducedUniverse = new Map<string, number>();
       const foundFirst = new Set(firstWords);
       let index = 0;
-      for (const word of this.puzzle.words.keys()) {
+      for (const word of this.currentPuzzle.words.keys()) {
         if (!foundFirst.has(word)) {
           reducedUniverse.set(word, index++);
         }
@@ -439,7 +487,8 @@ export class GameState {
       wordsFound.cutoff,
       wordsFound.words,
       complete,
-      record.lastPlayed
+      record.lastPlayed,
+      record.d4
     );
   }
 }

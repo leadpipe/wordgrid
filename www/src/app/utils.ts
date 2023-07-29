@@ -63,5 +63,6 @@ export async function saveGame(db: IDBPDatabase<WordgridDb>, game: GameState) {
     lastPlayed,
     elapsedMs: game.elapsedMs,
     wordsFound: game.wordsToStore,
+    d4: game.d4,
   });
 }

@@ -1,4 +1,5 @@
 import {DBSchema, IDBPDatabase, openDB} from 'idb/with-async-ittr';
+import {D4} from './d4';
 
 /**
  * The object holding the words found for a puzzle when the game is still in
@@ -46,6 +47,7 @@ export interface WordgridDb extends DBSchema {
       lastPlayed: Date;
       elapsedMs: number;
       wordsFound: WordsInProgress | WordsComplete;
+      d4?: D4;
     };
     indexes: {
       'by-last-played': Date;

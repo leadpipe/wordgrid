@@ -15,7 +15,7 @@
     "experimentalDecorators": true,
     "noImplicitOverride": true,
     "sourceMap": true,
-    "useDefineForClassFields": true
+    "useDefineForClassFields": false
   },
   "include": [
     "./src",
