@@ -1,9 +1,9 @@
 import './events';
 import './game-timer';
+import './grid-view';
 import './mat-icon';
 import './meta-panel';
 import './solution-word';
-import './grid-view';
 
 import {css, html, LitElement, PropertyValues} from 'lit';
 import {customElement, property, query, state} from 'lit/decorators.js';
