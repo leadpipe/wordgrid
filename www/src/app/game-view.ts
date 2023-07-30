@@ -367,7 +367,12 @@ export class GameView extends LitElement {
   }
 
   @property({reflect: true}) theme: Theme = 'light';
-  @property({attribute: false}) puzzleId: PuzzleId = PuzzleId.daily();
+  @property({
+    attribute: false,
+    hasChanged: (value?: PuzzleId, oldValue?: PuzzleId) =>
+      value?.seed !== oldValue?.seed,
+  })
+  puzzleId: PuzzleId = PuzzleId.daily();
   @property({type: Boolean}) resumeImmediately = false;
   @property({type: Boolean}) loadingWords = true;
   @query('#found') found?: HTMLElement;
