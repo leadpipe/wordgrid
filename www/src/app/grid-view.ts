@@ -76,13 +76,13 @@ export class GridView extends LitElement {
         fill: var(--text-fill);
       }
 
-      :host(.rotate) text {
+      :host(.rotate) g {
         transform-origin: center;
         transform: rotate(-90deg);
         transition: transform ${GRID_TRANSFORM_TRANSITION};
       }
 
-      :host(.flip) text {
+      :host(.flip) g {
         transform-origin: center;
         transform: scale(-1, 1);
         transition: transform ${GRID_TRANSFORM_TRANSITION};
@@ -171,7 +171,9 @@ export class GridView extends LitElement {
             col * cellPixels
           } y=${row * cellPixels} width=${cellPixels} height=${cellPixels}>
               <circle cx=${center} cy=${center} r=${radius} class=${cls} />
-              <text x=${center} y=${center} data-row=${row} data-col=${col}>${letter}</text>
+              <g>
+                <text x=${center} y=${center} data-row=${row} data-col=${col}>${letter}</text>
+              </g>
             </svg>
           `;
         })}
