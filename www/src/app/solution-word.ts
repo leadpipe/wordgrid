@@ -1,4 +1,4 @@
-import {css, html, LitElement} from 'lit';
+import {css, html, LitElement, PropertyValues} from 'lit';
 import {customElement, property, state} from 'lit/decorators.js';
 import * as wasm from 'wordgrid-rust';
 import {GameState} from '../game/game-state';
@@ -48,8 +48,17 @@ export class SolutionWord extends LitElement {
   @property({type: Number}) category: wasm.WordCategory | null = null;
   @property() theme: Theme = 'light';
 
+  /** Set this true to force the element to toggle open. */
+  @property({type: Boolean}) expand: boolean = false;
+
   @state() open = false;
   private timeoutId = 0;
+
+  override updated(changedProperties: PropertyValues) {
+    if (changedProperties.has('expand') && this.expand !== this.open) {
+      this.toggle();
+    }
+  }
 
   private toggle(_event?: Event) {
     this.open = !this.open;

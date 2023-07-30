@@ -362,6 +362,7 @@ export class GameView extends LitElement {
                 word=${word}
                 theme=${this.theme}
                 .category=${this.puzzle!.words.get(word) ?? null}
+                .expand=${word === this.latestWord}
               ></solution-word>
             </div>
           `
@@ -605,6 +606,7 @@ export class GameView extends LitElement {
   @state() private pendingWords: readonly string[] = [];
   private pendingWordsJudgements: WordJudgement[] = [];
   private pendingWordsTimeoutId = 0;
+  @state() private latestWord = '';
 
   private clearPendingWordsTimeout() {
     if (this.pendingWordsTimeoutId) {
@@ -633,11 +635,28 @@ export class GameView extends LitElement {
         WordJudgement.NOT_A_WORD
     );
     this.clearPendingWordsTimeout();
-    if (this.pendingWordsJudgements.some(j => j === WordJudgement.WORD)) {
+    const newWordIndex = this.pendingWordsJudgements.findIndex(
+      j => j === WordJudgement.WORD
+    );
+    if (newWordIndex >= 0) {
+      this.latestWord = event.detail.words[newWordIndex];
       this.found?.scrollTo({left: 0, behavior: 'smooth'});
       this.saveGame();
       if (this.gameState?.isComplete) {
         this.redirectToHistory();
+      }
+    } else {
+      const oldWordIndex = this.pendingWordsJudgements.findIndex(
+        j => j === WordJudgement.DUPLICATE
+      );
+      if (oldWordIndex >= 0) {
+        this.latestWord = event.detail.words[oldWordIndex];
+        const el = this.shadowRoot?.querySelector(
+          `solution-word[word=${this.latestWord}]`
+        );
+        window.setTimeout(() => {
+          el?.scrollIntoView({behavior: 'smooth'});
+        });
       }
     }
     this.pendingWordsTimeoutId = window.setTimeout(() => {
