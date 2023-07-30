@@ -15,6 +15,7 @@ export class GameTimer extends LitElement {
   static override styles = css`
     :host {
       display: block;
+      user-select: none;
     }
 
     a {
