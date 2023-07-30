@@ -16,11 +16,11 @@ export const DARK_BLUE_TRANSPARENT = css`
 
 export const LIGHT_GREEN = css`#2a6914`;
 export const LIGHT_GREEN_TRANSPARENT = css`
-  ${LIGHT_GREEN}33
+  ${LIGHT_GREEN}22
 `;
 export const DARK_GREEN = css`#4dbc24`;
 export const DARK_GREEN_TRANSPARENT = css`
-  ${DARK_GREEN}44
+  ${DARK_GREEN}22
 `;
 
 export const LIGHT_RED = css`#e3280b`;
