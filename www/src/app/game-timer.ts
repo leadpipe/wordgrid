@@ -16,6 +16,7 @@ export class GameTimer extends LitElement {
     :host {
       display: block;
       user-select: none;
+      -webkit-user-select: none;
     }
 
     a {

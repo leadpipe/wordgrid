@@ -71,6 +71,7 @@ export class GameView extends LitElement {
         text-decoration: none;
         cursor: pointer;
         user-select: none;
+        -webkit-user-select: none;
       }
 
       :host a {
@@ -159,6 +160,7 @@ export class GameView extends LitElement {
         display: flex;
         align-items: center;
         user-select: none;
+        -webkit-user-select: none;
       }
 
       #below-grid > * {

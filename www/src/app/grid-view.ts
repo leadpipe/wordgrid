@@ -65,6 +65,7 @@ export class GridView extends LitElement {
         dominant-baseline: central;
         text-anchor: middle;
         user-select: none;
+        -webkit-user-select: none;
       }
 
       :host([isPaused]) text {
