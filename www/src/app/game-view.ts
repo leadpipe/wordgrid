@@ -145,6 +145,16 @@ export class GameView extends LitElement {
         transition: transform ${GRID_TRANSFORM_TRANSITION};
       }
 
+      grid-view.pause-changing {
+        transform: scaleY(0);
+        transition: transform 80ms;
+      }
+
+      grid-view.pause-changed {
+        transform: scaleY(1);
+        transition: transform 80ms;
+      }
+
       #grid {
         grid-column: 2;
         display: flex;
@@ -388,12 +398,12 @@ export class GameView extends LitElement {
 
   private readonly foregroundnessHandler = () => {
     if (document.visibilityState !== 'visible') {
-      this.pausePlay('foregroundness');
+      this.pauseGame('foregroundness');
     }
   };
 
   private readonly windowBlurHandler = () => {
-    this.pausePlay('window blur');
+    this.pauseGame('window blur');
   };
 
   private lastInteraction = new Date();
@@ -407,7 +417,7 @@ export class GameView extends LitElement {
       if (this.gameState?.isPaused) {
         this.resumePlay();
       } else {
-        this.pausePlay('spacebar');
+        this.pauseGame('spacebar');
       }
     }
   };
@@ -520,7 +530,7 @@ export class GameView extends LitElement {
 
   private async timerExpired(event: CustomEvent<boolean>) {
     if (!event.detail) return; // Timer wasn't showing
-    await this.pausePlayAsync();
+    await this.pauseGameAsync();
     if (
       window.confirm(`Time's up!\n\nKeep looking for words?\n\nCancel to quit.`)
     ) {
@@ -539,19 +549,37 @@ export class GameView extends LitElement {
   }
 
   private resumePlay() {
-    this.gameState?.resume();
-    this.requestUpdate();
-    logEvent(EventType.ACTION, {category: 'resume'});
+    this.noteInteraction();
+    this.gridTransitionQueue.push({
+      className: 'pause-changing',
+      updateGrid: () => {
+        const {gameState} = this;
+        if (gameState) {
+          gameState.resume();
+          logEvent(EventType.ACTION, {category: 'resume'});
+        }
+        this.gridTransitionQueue.push({
+          className: 'pause-changed',
+          updateGrid: () => {},
+        });
+      },
+    });
+    this.runGridTransition();
   }
 
-  private async pausePlayAsync(timestamp?: number) {
+  private pausePlay() {
+    this.noteInteraction();
+    this.pauseGame('button');
+  }
+
+  private async pauseGameAsync(timestamp?: number) {
     this.gameState?.pause(timestamp);
     this.requestUpdate();
     await this.saveGame();
     logEvent(EventType.ACTION, {category: 'pause'});
   }
 
-  pausePlay(why: string) {
+  pauseGame(why: string) {
     const now = new Date();
     const today = toIsoDateString(now);
     const activeDate = toIsoDateString(this.lastInteraction);
@@ -563,7 +591,17 @@ export class GameView extends LitElement {
       timestamp = this.lastInteraction.getTime();
       logEvent(EventType.ACTION, {category: 'pause-next-day', detail: why});
     }
-    this.pausePlayAsync(timestamp);
+    this.gridTransitionQueue.push({
+      className: 'pause-changing',
+      updateGrid: () => {
+        this.pauseGameAsync(timestamp);
+        this.gridTransitionQueue.push({
+          className: 'pause-changed',
+          updateGrid: () => {},
+        });
+      },
+    });
+    this.runGridTransition();
   }
 
   private async quit() {

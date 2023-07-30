@@ -483,7 +483,7 @@ export class LeadpipeWordgrid extends LitElement {
   }
 
   private pauseGame(why: string) {
-    this.gameView?.pausePlay(why);
+    this.gameView?.pauseGame(why);
   }
 
   private handlePlayPuzzle(event: CustomEvent<PuzzleToPlay>) {
