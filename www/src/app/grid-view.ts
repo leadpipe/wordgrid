@@ -60,7 +60,8 @@ export class GridView extends LitElement {
       }
 
       text {
-        font: 800 6.5px 'Merriweather Sans';
+        font-weight: 800;
+        font-family: 'Merriweather Sans';
         dominant-baseline: central;
         text-anchor: middle;
         user-select: none;
@@ -96,7 +97,6 @@ export class GridView extends LitElement {
         stroke: var(--path);
         stroke-linecap: round;
         stroke-linejoin: round;
-        stroke-width: 2px;
       }
 
       .del {
@@ -105,7 +105,6 @@ export class GridView extends LitElement {
         stroke: var(--del);
         stroke-linecap: round;
         stroke-linejoin: round;
-        stroke-width: 1px;
       }
 
       .add {
@@ -114,24 +113,27 @@ export class GridView extends LitElement {
         stroke: var(--add);
         stroke-linecap: round;
         stroke-linejoin: round;
-        stroke-width: 1px;
       }
     `,
   ];
 
   override render() {
-    const {cellSpan, hoverLoc, isPaused, puzzle, puzzleId, trail} = this;
+    const {cellSpan, hoverLoc, isPaused, puzzle, puzzleId, sidePixels, trail} =
+      this;
     if (!cellSpan || !puzzleId) return;
     const gameSize = puzzleId.spec.size;
-    const sideSize = 10 * gameSize; // Each cell is 10 units
+    const cellPixels = sidePixels / gameSize;
     const grid = isPaused || !puzzle ? this.pausedGrid(gameSize) : puzzle.grid;
     const pathStartLoc = hoverLoc ?? trail[0];
-    const strokeWidth = 10 / cellSpan;
-    const radius = 5 - strokeWidth / 2;
+    const strokeWidth = cellPixels / cellSpan;
+    const center = cellPixels / 2;
+    const radius = (cellPixels - strokeWidth) / 2;
     return html`
       <svg
         ${ref(this.svgChanged)}
-        viewBox="0 0 ${sideSize} ${sideSize}"
+        viewBox="0 0 ${sidePixels} ${sidePixels}"
+        width=${sidePixels}
+        height=${sidePixels}
         @pointerenter=${this.handlePointerEnter}
         @pointermove=${this.handlePointerHovering}
         @pointerleave=${this.handlePointerLeave}
@@ -143,36 +145,59 @@ export class GridView extends LitElement {
           circle {
             stroke-width: ${strokeWidth}px;
           }
+          text {
+            font-size: ${cellPixels * 0.65}px;
+          }
+          .path {
+            stroke-width: ${cellPixels * 0.2}px;
+          }
+
+          .del {
+            stroke-width: ${cellPixels * 0.1}px;
+          }
+
+          .add {
+            stroke-width: ${cellPixels * 0.1}px;
+          }
         </style>
         ${puzzleId.spec.locs.map(loc => {
           const {row, col} = loc;
           let letter = grid[row].charAt(col);
           if (letter === 'Q') letter = 'Qu';
-          const x = col * 10 + 5;
-          const y = row * 10 + 5;
           const cls = loc === pathStartLoc ? 'path-start' : '';
           return svg`
-            <svg viewBox="0 0 10 10" x=${col * 10} y=${row * 10} width="10" height="10">
-              <circle cx="5" cy="5" r=${radius} class=${cls} />
-              <text x="5" y="5" data-row=${row} data-col=${col}>${letter}</text>
+            <svg viewBox="0 0 ${cellPixels} ${cellPixels}" x=${
+            col * cellPixels
+          } y=${row * cellPixels} width=${cellPixels} height=${cellPixels}>
+              <circle cx=${center} cy=${center} r=${radius} class=${cls} />
+              <text x=${center} y=${center} data-row=${row} data-col=${col}>${letter}</text>
             </svg>
           `;
         })}
-        ${this.renderTrail(trail, puzzleId.spec.locs)}
+        ${this.renderTrail(trail, puzzleId.spec.locs, cellPixels, center)}
       </svg>
     `;
   }
 
-  private renderTrail(trail: Loc[], locs: readonly Loc[]) {
+  private renderTrail(
+    trail: Loc[],
+    locs: readonly Loc[],
+    cellPixels: number,
+    center: number
+  ) {
     if (!trail.length) return nothing;
     const parts = [
       svg`
       <path
         class="path"
-        d="M ${trail[0].col * 10 + 5},${trail[0].row * 10 + 5}
+        d="M ${trail[0].col * cellPixels + center},${
+        trail[0].row * cellPixels + center
+      }
            ${trail
              .map(({row, col}) => {
-               return `L ${col * 10 + 5},${row * 10 + 5}`;
+               return `L ${col * cellPixels + center},${
+                 row * cellPixels + center
+               }`;
              })
              .join(' ')}
         " />
@@ -186,10 +211,12 @@ export class GridView extends LitElement {
         parts.push(svg`
         <path
           class="del"
-          d="M ${col * 10 + 3},${row * 10 + 3}
-             l 4,4
-             m -4,0
-             l 4,-4
+          d="M ${col * cellPixels + center * 0.6},${
+          row * cellPixels + center * 0.6
+        }
+             l ${cellPixels * 0.4},${cellPixels * 0.4}
+             m -${cellPixels * 0.4},0
+             l ${cellPixels * 0.4},-${cellPixels * 0.4}
           "/>
       `);
       }
@@ -200,10 +227,12 @@ export class GridView extends LitElement {
         parts.push(svg`
         <path
           class="add"
-          d="M ${loc.col * 10 + 5},${loc.row * 10 + 2}
-             l 0,6
-             m -3,-3
-             l 6,0
+          d="M ${loc.col * cellPixels + center},${
+          loc.row * cellPixels + center * 0.4
+        }
+             l 0,${cellPixels * 0.6}
+             m -${cellPixels * 0.3},-${cellPixels * 0.3}
+             l ${cellPixels * 0.6},0
           "/>
       `);
       }
@@ -494,6 +523,8 @@ export class GridView extends LitElement {
 
   /** How many actual pixels are on each side of a cell. */
   @state() private cellSpan = 0;
+  /** How many nominal pixels are on each side of the grid. */
+  @state() private sidePixels = 0;
 
   private calcMetrics() {
     const rect = this.getBoundingClientRect();
@@ -502,6 +533,7 @@ export class GridView extends LitElement {
     const span = Math.min(rect.width, rect.height);
     const size = puzzleId.spec.size;
     this.cellSpan = (devicePixelRatio * span) / size;
+    this.sidePixels = span;
   }
 
   private pausedGrid(puzzleSize: number): string[] {
