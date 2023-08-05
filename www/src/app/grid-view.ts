@@ -54,6 +54,10 @@ export class GridView extends LitElement {
         touch-action: none;
       }
 
+      svg * {
+        pointer-events: none;
+      }
+
       circle {
         fill: none;
         stroke: ${BOTH_THEMES_BORDER};
@@ -93,7 +97,6 @@ export class GridView extends LitElement {
       }
 
       .path {
-        pointer-events: none;
         fill: none;
         stroke: var(--path);
         stroke-linecap: round;
@@ -101,7 +104,6 @@ export class GridView extends LitElement {
       }
 
       .del {
-        pointer-events: none;
         fill: none;
         stroke: var(--del);
         stroke-linecap: round;
@@ -109,7 +111,6 @@ export class GridView extends LitElement {
       }
 
       .add {
-        pointer-events: none;
         fill: none;
         stroke: var(--add);
         stroke-linecap: round;
@@ -172,7 +173,7 @@ export class GridView extends LitElement {
           } y=${row * cellPixels} width=${cellPixels} height=${cellPixels}>
               <circle cx=${center} cy=${center} r=${radius} class=${cls} />
               <g>
-                <text x=${center} y=${center} data-row=${row} data-col=${col}>${letter}</text>
+                <text x=${center} y=${center}>${letter}</text>
               </g>
             </svg>
           `;
@@ -294,8 +295,10 @@ export class GridView extends LitElement {
     window.removeEventListener('keydown', this.keyHandler);
   }
 
+  private svg!: SVGElement;
   private svgChanged(svg?: Element) {
     if (svg instanceof SVGElement) {
+      this.svg = svg;
       this.calcMetrics();
     }
   }
@@ -317,13 +320,31 @@ export class GridView extends LitElement {
    */
   private readonly prefixes: string[] = [];
 
-  private convertPointToLoc(event: PointerEvent): Loc | undefined {
-    const data = (event.target as HTMLElement | null)?.dataset;
-    if (data && 'row' in data) {
-      const {row, col} = data;
-      return locAt(Number(row), Number(col));
+  private convertCoordinateToCellNumber(coord: number): number | undefined {
+    const {cellSpan, puzzleId} = this;
+    if (coord < 0 || !puzzleId || coord >= cellSpan * puzzleId.spec.size) {
+      return undefined;
     }
-    return undefined;
+    return Math.floor(coord / cellSpan);
+  }
+
+  private cellCenter(cellNumber: number): number {
+    return (cellNumber + 0.5) * this.cellSpan;
+  }
+
+  private convertPointToLoc(point: {x: number; y: number}): Loc | undefined {
+    const rect = this.svg.getBoundingClientRect();
+    const locX = (point.x - rect.x) * devicePixelRatio;
+    const locY = (point.y - rect.y) * devicePixelRatio;
+    const col = this.convertCoordinateToCellNumber(locX);
+    const row = this.convertCoordinateToCellNumber(locY);
+    if (col === undefined || row === undefined) return undefined;
+    const loc = locAt(row, col);
+    const dist = Math.hypot(
+      locX - this.cellCenter(col),
+      locY - this.cellCenter(row)
+    );
+    return dist <= (this.cellSpan / 2) * 0.9 ? loc : undefined;
   }
 
   /**
@@ -411,11 +432,13 @@ export class GridView extends LitElement {
       this.pendingKeyboardInput = '';
       this.pushLoc(loc);
       this.hoverLoc = undefined;
+      this.svg.setPointerCapture(event.pointerId);
     }
   }
 
-  private handlePointerUp(_event: PointerEvent) {
+  private handlePointerUp(event: PointerEvent) {
     if (!this.shouldInteract()) return;
+    this.svg?.releasePointerCapture(event.pointerId);
     if (this.puzzle) {
       this.dispatchEvent(
         new CustomEvent('words-selected', {detail: {words: [...this.prefixes]}})
