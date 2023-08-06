@@ -92,6 +92,13 @@ export class GridView extends LitElement {
         transition: transform ${GRID_TRANSFORM_TRANSITION};
       }
 
+      @media (prefers-reduced-motion) {
+        :host(.rotate) g,
+        :host(.flip) g {
+          transition: transform 1ms;
+        }
+      }
+
       .path-start {
         fill: var(--path-start);
       }

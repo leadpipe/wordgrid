@@ -155,6 +155,15 @@ export class GameView extends LitElement {
         transition: transform 80ms;
       }
 
+      @media (prefers-reduced-motion) {
+        grid-view.rotate,
+        grid-view.flip,
+        grid-view.pause-changing,
+        grid-view.pause-changed {
+          transition: transform 1ms;
+        }
+      }
+
       #grid {
         grid-column: 2;
         display: flex;
