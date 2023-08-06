@@ -213,32 +213,34 @@ export class GridView extends LitElement {
         // location from the trail.
         const {row, col} = trail[trail.length - 2];
         parts.push(svg`
-        <path
-          class="del"
-          d="M ${col * cellPixels + center * 0.6},${
+          <path
+            class="del"
+            d="M ${col * cellPixels + center * 0.6},${
           row * cellPixels + center * 0.6
         }
-             l ${cellPixels * 0.4},${cellPixels * 0.4}
-             m -${cellPixels * 0.4},0
-             l ${cellPixels * 0.4},-${cellPixels * 0.4}
-          "/>
-      `);
+              l ${cellPixels * 0.4},${cellPixels * 0.4}
+              m -${cellPixels * 0.4},0
+              l ${cellPixels * 0.4},-${cellPixels * 0.4}
+            "/>
+        `);
       }
-      const used = new Set(trail);
-      const head = trail[trail.length - 1];
-      for (const loc of locs) {
-        if (used.has(loc) || !loc.isAdjacentTo(head)) continue;
-        parts.push(svg`
-        <path
-          class="add"
-          d="M ${loc.col * cellPixels + center},${
-          loc.row * cellPixels + center * 0.4
+      if (this.outOfBounds) {
+        const used = new Set(trail);
+        const head = trail[trail.length - 1];
+        for (const loc of locs) {
+          if (used.has(loc) || !loc.isAdjacentTo(head)) continue;
+          parts.push(svg`
+            <path
+              class="add"
+              d="M ${loc.col * cellPixels + center},${
+            loc.row * cellPixels + center * 0.4
+          }
+                l 0,${cellPixels * 0.6}
+                m -${cellPixels * 0.3},-${cellPixels * 0.3}
+                l ${cellPixels * 0.6},0
+              "/>
+          `);
         }
-             l 0,${cellPixels * 0.6}
-             m -${cellPixels * 0.3},-${cellPixels * 0.3}
-             l ${cellPixels * 0.6},0
-          "/>
-      `);
       }
     }
     return parts;
@@ -313,6 +315,9 @@ export class GridView extends LitElement {
   /** The current trail of selected locations. */
   @state() private trail: Loc[] = [];
 
+  /** True when the pointer is dragged somewhere not next to the trail. */
+  @state() private outOfBounds = false;
+
   /**
    * The strings being traced out by the trail.  Normally this is just one
    * string, but in the presence of Qs it will double, following the Q alone on
@@ -353,6 +358,7 @@ export class GridView extends LitElement {
    */
   private pushLoc(loc: Loc | undefined) {
     const {puzzle, trail, prefixes} = this;
+    this.outOfBounds = false;
     if (!puzzle || !loc) return;
     const index = trail.indexOf(loc);
     if (index >= 0) {
@@ -367,13 +373,15 @@ export class GridView extends LitElement {
         for (let i = 0; i < prefixes.length; ++i) {
           prefixes[i] = prefixes[i].substring(0, prefixes[i].length - 1);
         }
+        this.dispatchEvent(
+          new CustomEvent('words-traced', {detail: {words: [...prefixes]}})
+        );
       }
-      this.dispatchEvent(
-        new CustomEvent('words-traced', {detail: {words: [...prefixes]}})
-      );
+      this.outOfBounds = index < trail.length - 2;
       return;
     }
     if (trail.length && !loc.isAdjacentTo(trail[trail.length - 1])) {
+      this.outOfBounds = true;
       return;
     }
     this.trail = [...trail, loc];
