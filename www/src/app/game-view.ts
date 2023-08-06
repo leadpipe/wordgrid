@@ -65,7 +65,7 @@ export class GameView extends LitElement {
         /* Horizontal layout */
         --grid-side-extent: min(
           var(--base-grid-side-extent),
-          100vh - var(--below-grid-height) - var(--controls-height) -
+          100vh - var(--below-grid-height) - var(--controls-height) - 2 *
             var(--page-grid-gap),
           100vw - 2 * var(--page-grid-gap) - 2 * var(--found-width)
         );
