@@ -45,25 +45,29 @@ export class GameView extends LitElement {
         right: 0;
         bottom: 0;
         left: 0;
-        padding-top: 8px;
+        padding-top: var(--page-grid-gap);
         display: grid;
         grid-template-columns: 1fr var(--grid-side-extent) 1fr;
         grid-template-rows: min-content auto;
         gap: var(--page-grid-gap);
         --page-grid-gap: 8px;
         --grid-spec-size: 6;
-        --grid-optimal-cell-side-extent: 80px;
+        --grid-optimal-cell-side-extent: 250px;
         --below-grid-height: 80px;
+        --controls-height: calc(25px + 16px);
+        --summary-height: 74px;
+        --found-height: 100px;
+        --found-width: 6em;
         --grid-optimal-width: calc(
-          var(--grid-spec-size) * var(--grid-optimal-cell-side-extent) + 40px
-        );
-        --grid-optimal-height: calc(
-          var(--grid-optimal-width) + var(--below-grid-height)
+          var(--grid-spec-size) * var(--grid-optimal-cell-side-extent)
         );
         --base-grid-side-extent: var(--grid-optimal-width);
+        /* Horizontal layout */
         --grid-side-extent: min(
           var(--base-grid-side-extent),
-          100vh - var(--below-grid-height)
+          100vh - var(--below-grid-height) - var(--controls-height) -
+            var(--page-grid-gap),
+          100vw - 2 * var(--page-grid-gap) - 2 * var(--found-width)
         );
       }
 
@@ -117,8 +121,8 @@ export class GameView extends LitElement {
       }
 
       #found {
-        min-height: 100px;
-        column-width: 6em;
+        min-height: var(--found-height);
+        column-width: var(--found-width);
         column-fill: auto;
         overflow-wrap: break-word;
         padding-left: 24px;
@@ -191,11 +195,15 @@ export class GameView extends LitElement {
         flex: 1 1 0;
       }
 
-      @media (max-width: 800px) {
+      /* Vertical layout */
+      @media (max-aspect-ratio: 7/8) {
         :host {
           --grid-side-extent: min(
             var(--base-grid-side-extent),
-            100vw - 2 * var(--page-grid-gap)
+            100vw - 2 * var(--page-grid-gap),
+            100vh - var(--below-grid-height) - var(--found-height) -
+              var(--controls-height) - var(--summary-height) - 4 *
+              var(--page-grid-gap)
           );
           grid-template-rows: min-content min-content min-content auto;
         }
