@@ -54,10 +54,11 @@ export class SolutionWord extends LitElement {
   @state() open = false;
   private timeoutId = 0;
 
-  override updated(changedProperties: PropertyValues) {
+  override shouldUpdate(changedProperties: PropertyValues<this>): boolean {
     if (changedProperties.has('expand') && this.expand !== this.open) {
-      this.toggle();
+      this.open = this.expand;
     }
+    return true;
   }
 
   private toggle(_event?: Event) {
@@ -73,7 +74,7 @@ export class SolutionWord extends LitElement {
       window.clearTimeout(this.timeoutId);
       this.timeoutId = 0;
     }
-    if (this.open && !this.expand) {
+    if (this.open) {
       this.timeoutId = window.setTimeout(() => {
         if (this.open) {
           this.toggle();
