@@ -73,7 +73,7 @@ export class SolutionWord extends LitElement {
       window.clearTimeout(this.timeoutId);
       this.timeoutId = 0;
     }
-    if (this.open) {
+    if (this.open && !this.expand) {
       this.timeoutId = window.setTimeout(() => {
         if (this.open) {
           this.toggle();
