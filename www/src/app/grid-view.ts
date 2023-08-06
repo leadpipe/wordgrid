@@ -230,15 +230,11 @@ export class GridView extends LitElement {
         for (const loc of locs) {
           if (used.has(loc) || !loc.isAdjacentTo(head)) continue;
           parts.push(svg`
-            <path
-              class="add"
-              d="M ${loc.col * cellPixels + center},${
-            loc.row * cellPixels + center * 0.4
-          }
-                l 0,${cellPixels * 0.6}
-                m -${cellPixels * 0.3},-${cellPixels * 0.3}
-                l ${cellPixels * 0.6},0
-              "/>
+            <circle cx=${loc.col * cellPixels + center}
+                    cy=${loc.row * cellPixels + center}
+                    r=${cellPixels * 0.4}
+                    class="add"
+              />
           `);
         }
       }
