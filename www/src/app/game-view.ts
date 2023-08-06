@@ -572,14 +572,17 @@ export class GameView extends LitElement {
     this.pauseGame('button');
   }
 
-  private async pauseGameAsync(timestamp?: number) {
+  private async pauseGameAsync(timestamp?: number, update = true) {
     this.gameState?.pause(timestamp);
-    this.requestUpdate();
+    if (update) this.requestUpdate();
     await this.saveGame();
     logEvent(EventType.ACTION, {category: 'pause'});
   }
 
   pauseGame(why: string) {
+    if (this.gameState?.isPaused || this.classList.contains('pause-changing')) {
+      return;
+    }
     const now = new Date();
     const today = toIsoDateString(now);
     const activeDate = toIsoDateString(this.lastInteraction);
@@ -594,7 +597,7 @@ export class GameView extends LitElement {
     this.gridTransitionQueue.push({
       className: 'pause-changing',
       updateGrid: () => {
-        this.pauseGameAsync(timestamp);
+        this.pauseGameAsync(timestamp, false);
         this.gridTransitionQueue.push({
           className: 'pause-changed',
           updateGrid: () => {},
