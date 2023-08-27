@@ -547,6 +547,9 @@ export class GameView extends LitElement {
 
   private async timerExpired(event: CustomEvent<boolean>) {
     if (!event.detail) return; // Timer wasn't showing
+    if (this.pendingWords.length) {
+      this.addWords(this.pendingWords, true);
+    }
     await this.pauseGameAsync();
     if (
       window.confirm(`Time's up!\n\nKeep looking for words?\n\nCancel to quit.`)
@@ -685,11 +688,15 @@ export class GameView extends LitElement {
   }
 
   private wordsSelected(event: CustomEvent<InputWords>) {
+    this.addWords(event.detail.words, event.detail.checkPossible ?? false);
+  }
+
+  private addWords(words: readonly string[], checkPossible: boolean) {
     this.noteInteraction();
-    this.pendingWords = event.detail.words;
-    this.pendingWordsJudgements = event.detail.words.map(
+    this.pendingWords = words;
+    this.pendingWordsJudgements = words.map(
       word =>
-        this.gameState?.addFoundWord(word, event.detail.checkPossible) ??
+        this.gameState?.addFoundWord(word, checkPossible) ??
         WordJudgement.NOT_A_WORD
     );
     this.clearPendingWordsTimeout();
@@ -697,7 +704,7 @@ export class GameView extends LitElement {
       j => j === WordJudgement.WORD
     );
     if (newWordIndex >= 0) {
-      this.latestWord = event.detail.words[newWordIndex];
+      this.latestWord = words[newWordIndex];
       this.found?.scrollTo({left: 0, behavior: 'smooth'});
       this.saveGame();
       if (this.gameState?.isComplete) {
@@ -708,7 +715,7 @@ export class GameView extends LitElement {
         j => j === WordJudgement.DUPLICATE
       );
       if (oldWordIndex >= 0) {
-        this.latestWord = event.detail.words[oldWordIndex];
+        this.latestWord = words[oldWordIndex];
         const el = this.shadowRoot?.querySelector(
           `solution-word[word=${this.latestWord}]`
         );
