@@ -10,7 +10,7 @@ import {customElement, property, query, state} from 'lit/decorators.js';
 import {classMap} from 'lit/directives/class-map.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {EventType, logEvent} from '../analytics';
-import {D4} from '../game/d4';
+import {D4, d4Flipped, d4Rotation} from '../game/d4';
 import {GameState} from '../game/game-state';
 import {PuzzleId, toIsoDateString} from '../game/puzzle-id';
 import {WordJudgement} from '../game/types';
@@ -107,6 +107,17 @@ export class GameView extends LitElement {
 
       #controls > div:nth-child(3) {
         justify-content: right;
+      }
+
+      .d4-control {
+        position: relative;
+      }
+
+      .d4-state {
+        position: absolute;
+        right: -5px;
+        bottom: -5px;
+        font-size: 30%;
       }
 
       #summary,
@@ -267,11 +278,21 @@ export class GameView extends LitElement {
           </a>
           ${gameState && !gameState.isPaused
             ? html`
-                <a @click=${this.rotatePuzzle} title="Rotate puzzle">
+                <a
+                  @click=${this.rotatePuzzle}
+                  title="Rotate puzzle"
+                  class="d4-control"
+                >
                   <mat-icon name="rotate_90_degrees_cw"></mat-icon>
+                  <div class="d4-state">${d4Rotation(gameState.d4)}</div>
                 </a>
-                <a @click=${this.flipPuzzle} title="Flip puzzle">
+                <a
+                  @click=${this.flipPuzzle}
+                  title="Flip puzzle"
+                  class="d4-control"
+                >
                   <mat-icon name="flip"></mat-icon>
+                  <div class="d4-state">${Number(d4Flipped(gameState.d4))}</div>
                 </a>
               `
             : ''}
