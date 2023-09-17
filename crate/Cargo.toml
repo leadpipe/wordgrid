@@ -10,7 +10,7 @@ license = "Apache-2.0"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-base64 = "0.21.0"
+base64 = "0.21"
 chrono = "0.4"
 getrandom = { version = "0.2", features = ["js"] }
 histogram = "0.7"
@@ -22,8 +22,8 @@ rand_distr = "0.4"
 rand_pcg = "0.3"
 rand_seeder = "0.2"
 serde = {version = "1.0", features = ["derive"]}
-serde-wasm-bindgen = "0.4"
-sif = "0.1.0"
+serde-wasm-bindgen = "0.5"
+sif = "0.1"
 thousands = "0.2"
 wasm-bindgen = "0.2"
 
@@ -34,7 +34,7 @@ wasm-bindgen = "0.2"
 console_error_panic_hook = { version = "0.1", optional = true }
 
 [dev-dependencies]
-criterion = "0.4"
+criterion = "0.5"
 wasm-bindgen-test = "0.3"
 
 [profile.release]
