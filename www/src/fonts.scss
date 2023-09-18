@@ -5,12 +5,15 @@
 @include MaterialIcons.faces(
   $weights: (400),
   $display: block,
+  $formats: woff2,
 );
 @include MerriweatherSans.faces(
   $weights: (800),
   $display: block,
+  $formats: woff2,
 );
 @include Prompt.faces(
   $weights: (400, 700),
   $display: block,
+  $formats: woff2,
 );
