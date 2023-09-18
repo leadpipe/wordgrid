@@ -39,6 +39,11 @@ impl JsRandom {
       &mut *(p as *mut Random)
     }
   }
+
+  /// Generates the next byte.
+  pub fn next_byte(&mut self) -> u8 {
+    self.rng().gen()
+  }
 }
 
 #[wasm_bindgen]
@@ -52,11 +57,6 @@ impl JsRandom {
   /// Generates the next floating-point number in the half-open interval [0,
   /// 1).
   pub fn next(&mut self) -> f64 {
-    self.rng().gen()
-  }
-
-  #[wasm_bindgen(js_name = "nextByte")]
-  pub fn next_byte(&mut self) -> u8 {
     self.rng().gen()
   }
 
