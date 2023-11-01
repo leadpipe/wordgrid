@@ -49,7 +49,7 @@ export class GameTimer extends LitElement {
     const msRemaining = this.gameState?.msRemaining ?? 0;
     if (msRemaining > 0) {
       window.setTimeout(
-        () => this.requestUpdate(),
+        () => this.timerTicked(),
         ((msRemaining - 1) % 1000) + 1
       );
       this.timerRunning = true;
@@ -71,6 +71,17 @@ export class GameTimer extends LitElement {
     const min = Math.floor(secRemaining / 60);
     const sec = secRemaining % 60;
     return `${min}:${String(sec).padStart(2, '0')}`;
+  }
+
+  private timerTicked() {
+    this.requestUpdate();
+    this.dispatchEvent(
+      new CustomEvent('timer-ticked', {
+        detail: getShowTimer(),
+        bubbles: true,
+        composed: true,
+      })
+    );
   }
 
   private showTimer() {

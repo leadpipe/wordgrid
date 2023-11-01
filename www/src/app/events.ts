@@ -55,6 +55,12 @@ declare global {
     'word-expanded': CustomEvent<string>;
 
     /**
+     * Sent by game-timer when another second has passed.  The event detail
+     * tells whether the timer was being shown.
+     */
+    'timer-ticked': CustomEvent<boolean>;
+
+    /**
      * Sent by game-timer when the time is up.  The event detail tells whether
      * the timer was being shown.
      */

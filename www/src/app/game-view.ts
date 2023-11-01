@@ -343,6 +343,7 @@ export class GameView extends LitElement {
             ? html`
                 <game-timer
                   .gameState=${gameState}
+                  @timer-ticked=${this.saveGame}
                   @timer-expired=${this.timerExpired}
                 ></game-timer>
                 ${this.pendingWords.length
