@@ -117,7 +117,7 @@ export class GameView extends LitElement {
         position: absolute;
         right: -5px;
         bottom: -5px;
-        font-size: 30%;
+        font-size: calc(max(30%, 10px));
       }
 
       #summary,
