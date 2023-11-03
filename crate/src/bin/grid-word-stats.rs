@@ -80,10 +80,10 @@ fn build_word_count_histogram(
   end: NaiveDate,
   puzzle_size: &'static PuzzleSize,
 ) -> (Histogram, &'static PuzzleSize) {
-  let h = Histogram::builder().build().unwrap();
+  let mut h = Histogram::new(7, 64).unwrap();
   let mut date = start;
   while date < end {
-    h.increment(count_words(words, date, puzzle_size), 1).unwrap();
+    h.increment(count_words(words, date, puzzle_size)).unwrap();
     date += Duration::days(1);
   }
   (h, puzzle_size)
@@ -106,7 +106,7 @@ fn print_histogram(h: (Histogram, &'static PuzzleSize)) {
     println!(
       "{:>3}: {:>4}",
       percentile,
-      h.0.percentile(percentile as f64).unwrap().low()
+      h.0.percentile(percentile as f64).unwrap().range().start()
     );
   }
   println!();
