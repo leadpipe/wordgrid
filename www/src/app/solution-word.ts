@@ -33,8 +33,7 @@ export class SolutionWord extends LitElement {
               [${category ? `${renderCategory(category)} —` : ''}${points}
               point${points > 1 ? 's' : ''} —
               <a
-                href="https://www.google.com/search?q=define+%2B${this
-                  .word}+OR+${this.word}"
+                href="https://www.google.com/search?q=define+%22${this.word.toLowerCase()}%22"
                 target="_blank"
                 >look up</a
               >]
