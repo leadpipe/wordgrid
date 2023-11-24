@@ -5,7 +5,7 @@ import './mat-icon';
 import './meta-panel';
 import './solution-word';
 
-import {css, html, LitElement, PropertyValues} from 'lit';
+import {css, html, LitElement, PropertyValues, TemplateResult} from 'lit';
 import {customElement, property, query, state} from 'lit/decorators.js';
 import {classMap} from 'lit/directives/class-map.js';
 import {repeat} from 'lit/directives/repeat.js';
@@ -251,11 +251,49 @@ export class GameView extends LitElement {
         font-weight: bold;
         font-size: 24px;
       }
+
+      #expired div {
+        display: flex;
+        gap: 1rem;
+      }
+
+      #expired button {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
     `,
   ];
 
   override render() {
     const {theme, gameState} = this;
+    return [
+      this.showTimerExpiredDialog ? this.renderTimerExpiredDialog() : '',
+      this.renderControls(theme, gameState),
+      this.renderSummary(gameState),
+      this.renderGrid(theme, gameState),
+      this.renderFoundWords(theme, gameState),
+    ];
+  }
+  
+  private renderTimerExpiredDialog(): TemplateResult {
+    return html`
+      <dialog id="expired" @keydown=${this.handleDialogKey}>
+        <p>Time's up!</p>
+        <p>You earned ${renderCount(this.gameState?.earnedPoints ?? 0, 'point')}.</p>
+        <div>
+          <button id="expired-quit" @click=${this.quit}>
+            <mat-icon name="stop_circle"></mat-icon> Quit
+          </button>
+          <button id="expired-resume" @click=${this.resumePlay}>
+            <mat-icon name="play_circle"></mat-icon> Keep playing
+          </button>
+        </div>
+      </dialog>
+    `;
+  }
+
+  private renderControls(theme: Theme, gameState: GameState|null): TemplateResult {
     const newTheme =
       theme === getCurrentSystemTheme()
         ? theme === 'light'
@@ -299,6 +337,11 @@ export class GameView extends LitElement {
         </div>
         <div><meta-panel></meta-panel></div>
       </div>
+    `;
+  }
+
+  private renderSummary(gameState: GameState|null): TemplateResult {
+    return html`
       <div id="summary">
         ${gameState
           ? html`
@@ -320,6 +363,11 @@ export class GameView extends LitElement {
             `
           : ''}
       </div>
+    `;
+  }
+
+  private renderGrid(theme: Theme, gameState: GameState|null): TemplateResult {
+    return html`
       <div id="grid">
         <grid-view
           theme=${theme}
@@ -401,6 +449,11 @@ export class GameView extends LitElement {
             : ''}
         </div>
       </div>
+    `;
+  }
+
+  private renderFoundWords(theme: Theme, gameState: GameState|null): TemplateResult {
+    return html`
       <div id="found" class="may-scroll">
         ${repeat(
           this.gameState?.getFoundWords() ?? [],
@@ -430,8 +483,12 @@ export class GameView extends LitElement {
   @property({type: Boolean}) resumeImmediately = false;
   @property({type: Boolean}) loadingWords = true;
   @query('#found') found?: HTMLElement;
+  @query('dialog') dialog?: HTMLDialogElement;
+  @query('#expired-resume') expiredResumeButton?: HTMLButtonElement;
+  @query('#expired-quit') expiredQuitButton?: HTMLButtonElement;
 
   @state() private puzzle: GridResultMessage | null = null;
+  @state() private showTimerExpiredDialog = false;
   private gameState: GameState | null = null;
   private readonly db = openWordgridDb();
 
@@ -513,6 +570,22 @@ export class GameView extends LitElement {
     }
   }
 
+  private handleDialogKey(event: KeyboardEvent) {
+    switch (event.key) {
+      case 'Tab':
+        return; // Allow the default handling for tabs.
+      case 'Escape':
+        // Don't close the dialog, but do focus the Quit button.
+        this.expiredQuitButton?.focus();
+        break;
+      case 'Enter':
+      case ' ':
+        (event.target as HTMLElement | null)?.click(); // Treat the same as a click.
+    }
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }
+
   private setTheme(event: Event) {
     const theme = (event.target as HTMLElement).dataset.theme;
     setPreferredTheme(theme as ThemeOrAuto);
@@ -573,15 +646,10 @@ export class GameView extends LitElement {
       this.addWords(this.pendingWords, true);
     }
     await this.pauseGameAsync();
-    if (
-      window.confirm(`Time's up!\n\nKeep looking for words?\n\nCancel to quit.`)
-    ) {
-      // We need to delay, because the window losing focus makes us pause again.
-      await sleepMs(0);
-      this.resumePlay();
-    } else {
-      await this.quit();
-    }
+    this.showTimerExpiredDialog = true;
+    await 0;  // Let the dialog be rendered
+    this.dialog?.showModal();
+    this.expiredResumeButton?.focus();
   }
 
   private async goToHistory() {
@@ -591,6 +659,7 @@ export class GameView extends LitElement {
   }
 
   private resumePlay() {
+    this.showTimerExpiredDialog = false;
     this.noteInteraction();
     this.gridTransitionQueue.push({
       className: 'pause-changing',
@@ -650,6 +719,7 @@ export class GameView extends LitElement {
   }
 
   private async quit() {
+    this.showTimerExpiredDialog = false;
     this.gameState?.markComplete();
     await this.saveGame();
     this.redirectToHistory();
