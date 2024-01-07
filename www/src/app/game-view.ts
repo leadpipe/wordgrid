@@ -735,6 +735,7 @@ export class GameView extends LitElement {
         if (gameState) {
           this.puzzle = gameState.applyD4(D4.R);
           logEvent(EventType.ACTION, {category: 'rotate'});
+          this.saveGame();
         }
       },
     });
@@ -750,6 +751,7 @@ export class GameView extends LitElement {
         if (gameState) {
           this.puzzle = gameState.applyD4(D4.F);
           logEvent(EventType.ACTION, {category: 'flip'});
+          this.saveGame();
         }
       },
     });
