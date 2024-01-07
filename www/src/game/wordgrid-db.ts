@@ -1,4 +1,4 @@
-import {DBSchema, IDBPDatabase, openDB} from 'idb/with-async-ittr';
+import {DBSchema, IDBPDatabase, openDB} from 'idb';
 import {D4} from './d4';
 
 /**
