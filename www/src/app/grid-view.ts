@@ -433,6 +433,8 @@ export class GridView extends LitElement {
   }
 
   private handlePointerDown(event: PointerEvent) {
+    event.stopImmediatePropagation();
+    event.preventDefault();
     if (!this.shouldInteract()) return;
     if ((event.target as Element).hasPointerCapture(event.pointerId)) {
       (event.target as Element).releasePointerCapture(event.pointerId);
