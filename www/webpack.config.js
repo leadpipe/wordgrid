@@ -58,7 +58,8 @@ const baseConfig = {
               .replaceAll(
                 '$debugMode',
                 debugMode ? `{'debug_mode': 'true'}` : '{}'
-              );
+              )
+              .replaceAll('$buildDate', new Date().toString());
           },
         },
         {from: '../icons', to: __dirname + '/dist'},

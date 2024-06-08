@@ -26,7 +26,7 @@ import {
 } from './prefs';
 import {GRID_TRANSFORM_TRANSITION, MAY_SCROLL_CLASS} from './styles';
 import {Theme, ThemeOrAuto} from './types';
-import {renderCount, renderCounts, saveGame, sleepMs} from './utils';
+import {renderCount, renderCounts, saveGame} from './utils';
 
 interface GridTransition {
   className: string;
