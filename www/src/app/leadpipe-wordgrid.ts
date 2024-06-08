@@ -50,6 +50,7 @@ import {lastUsedPlus} from './usage';
 import {ensureExhaustiveSwitch} from './utils';
 
 type Page = 'play' | 'history';
+declare const buildDate: string;  // Defined in index.html during the build.
 
 const SECOND_MS = 1000;
 const MINUTE_MS = 60 * SECOND_MS;
@@ -208,6 +209,11 @@ export class LeadpipeWordgrid extends LitElement {
         height: 200px;
         flex: 0 0 auto;
       }
+
+      .build-date {
+        font-size: 80%;
+        margin-top: 16px;
+      }
     `,
   ];
 
@@ -255,6 +261,9 @@ export class LeadpipeWordgrid extends LitElement {
           <a href="https://github.com/leadpipe/wordgrid/#readme" target="_blank"
             ><mat-icon name="info"></mat-icon> Read site overview</a
           >
+        </div>
+        <div class="build-date">
+          Built at ${buildDate}
         </div>
       </dialog>
     `;
