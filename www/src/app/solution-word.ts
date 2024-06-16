@@ -11,6 +11,8 @@ export class SolutionWord extends LitElement {
     :host {
       display: inline;
       cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     :host([theme='dark']) a[href] {
