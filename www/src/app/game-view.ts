@@ -275,12 +275,14 @@ export class GameView extends LitElement {
       this.renderFoundWords(theme, gameState),
     ];
   }
-  
+
   private renderTimerExpiredDialog(): TemplateResult {
     return html`
       <dialog id="expired" @keydown=${this.handleDialogKey}>
         <p>Time's up!</p>
-        <p>You earned ${renderCount(this.gameState?.earnedPoints ?? 0, 'point')}.</p>
+        <p>
+          You earned ${renderCount(this.gameState?.earnedPoints ?? 0, 'point')}.
+        </p>
         <div>
           <button id="expired-quit" @click=${this.quit}>
             <mat-icon name="stop_circle"></mat-icon> Quit
@@ -293,7 +295,10 @@ export class GameView extends LitElement {
     `;
   }
 
-  private renderControls(theme: Theme, gameState: GameState|null): TemplateResult {
+  private renderControls(
+    theme: Theme,
+    gameState: GameState | null
+  ): TemplateResult {
     const newTheme =
       theme === getCurrentSystemTheme()
         ? theme === 'light'
@@ -340,7 +345,7 @@ export class GameView extends LitElement {
     `;
   }
 
-  private renderSummary(gameState: GameState|null): TemplateResult {
+  private renderSummary(gameState: GameState | null): TemplateResult {
     return html`
       <div id="summary">
         ${gameState
@@ -358,7 +363,7 @@ export class GameView extends LitElement {
               <div>
                 ${renderCounts(gameState.getWordCounts(), 'word')},
                 <br />
-                ${renderCounts(gameState?.getWordPoints(), 'point')}.
+                ${renderCounts(gameState.getWordPoints(), 'point')}.
               </div>
             `
           : ''}
@@ -366,7 +371,10 @@ export class GameView extends LitElement {
     `;
   }
 
-  private renderGrid(theme: Theme, gameState: GameState|null): TemplateResult {
+  private renderGrid(
+    theme: Theme,
+    gameState: GameState | null
+  ): TemplateResult {
     return html`
       <div id="grid">
         <grid-view
@@ -452,7 +460,10 @@ export class GameView extends LitElement {
     `;
   }
 
-  private renderFoundWords(theme: Theme, gameState: GameState|null): TemplateResult {
+  private renderFoundWords(
+    theme: Theme,
+    gameState: GameState | null
+  ): TemplateResult {
     return html`
       <div id="found" class="may-scroll">
         ${repeat(
@@ -647,7 +658,7 @@ export class GameView extends LitElement {
     }
     await this.pauseGameAsync();
     this.showTimerExpiredDialog = true;
-    await 0;  // Let the dialog be rendered
+    await 0; // Let the dialog be rendered
     this.dialog?.showModal();
     this.expiredResumeButton?.focus();
   }
