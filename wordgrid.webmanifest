@@ -5,7 +5,7 @@
   "categories": "games",
   "start_url": "https://leadpipe.github.io/wordgrid/",
   "id": "https://leadpipe.github.io/wordgrid/",
-  "display": "fullscreen",
+  "display": "standalone",
   "theme_color": "white",
   "icons": [
     {
