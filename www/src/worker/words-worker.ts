@@ -66,26 +66,30 @@ function makeGrid(
       ...cached,
       wordsLoadMs,
       elapsedMs,
-    }
+    };
   }
   return answer;
 }
 
 const MAX_CACHED = 100;
+const MIN_WORDS = 50;
 const cache = new Map<string, GridResultMessage>();
 
 function actuallyMakeGrid(m: MakeGridMessage): GridResultMessage {
   const random = new wasm.JsRandom(m.seed);
-  const grid = new wasm.Grid(words, m.size, random);
-  const map: Map<string, string> = grid.findWords(words, m.minLength);
+  const solvedGrid = new wasm.SolvedGrid(
+    words,
+    m.size,
+    m.minLength,
+    MIN_WORDS,
+    random
+  );
+  const map: Map<string, string> = solvedGrid.solution();
 
   const lines = [];
-  for (let r = 0; r < grid.size(); ++r) {
-    const chars = [];
-    for (let c = 0; c < grid.size(); ++c) {
-      chars.push(grid.cell(r, c));
-    }
-    lines.push(chars.join('').toUpperCase());
+  const gridString = solvedGrid.gridChars().toUpperCase();
+  for (let r = 0; r < m.size; ++r) {
+    lines.push(gridString.slice(r * m.size, (r + 1) * m.size));
   }
 
   const gridWords = new Map<string, wasm.WordCategory>();
@@ -97,7 +101,7 @@ function actuallyMakeGrid(m: MakeGridMessage): GridResultMessage {
   }
 
   random.free();
-  grid.free();
+  solvedGrid.free();
 
   return {
     type: FromWorkerMessageType.GRID,

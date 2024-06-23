@@ -17,6 +17,43 @@ pub struct Grid {
   cells: Vec<char>,
 }
 
+/// A grid and all the words that lie in it.
+#[wasm_bindgen]
+pub struct SolvedGrid {
+  /// The grid.
+  grid: Grid,
+  /// All the words in the grid, each mapped to its category.
+  solution: HashMap<String, WordCategory>,
+}
+
+#[wasm_bindgen]
+impl SolvedGrid {
+  /// Makes a new random word grid, using the letter frequencies from the given
+  /// Words, and solves it.  The size must be 4, 5, or 6.
+  /// 
+  /// Keeps generating new grids until it finds one with the given minimum
+  /// number of words.
+  #[wasm_bindgen(constructor)]
+  pub fn new_js(words: &Words, size: usize, min_length: usize, min_words: usize, rng: &mut JsRandom) -> Self {
+    loop {
+      let grid = Grid::new(words, size, rng.rng());
+      let solution = grid.find_words(words, min_length);
+      if solution.len() >= min_words {
+        return SolvedGrid {grid, solution}
+      }
+    }
+  }
+
+  #[wasm_bindgen(js_name = "gridChars")]
+  pub fn grid_chars(&self) -> String {
+    self.grid.cells.iter().collect()
+  }
+
+  pub fn solution(&self) -> JsValue {
+    serde_wasm_bindgen::to_value(&self.solution).unwrap()
+  }
+}
+
 #[wasm_bindgen]
 impl Grid {
   /// Makes a new random word grid, using the letter frequencies from the given

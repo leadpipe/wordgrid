@@ -612,20 +612,7 @@ export class GameView extends LitElement {
       // We've been superseded
       return;
     }
-    // If there are too few words in this grid, move on to the next puzzle.
-    if (puzzle.words.size < 50) {
-      const {resumeImmediately} = this;
-      this.dispatchEvent(
-        new CustomEvent('play-puzzle', {
-          detail: {puzzleId: puzzleId.next(), resumeImmediately},
-          bubbles: true,
-          composed: true,
-        })
-      );
-    } else {
-      // It's a valid puzzle: use it.
-      this.loadPuzzle(puzzle, puzzleId);
-    }
+    this.loadPuzzle(puzzle, puzzleId);
   }
 
   private async loadPuzzle(puzzle: GridResultMessage, puzzleId: PuzzleId) {
