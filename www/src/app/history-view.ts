@@ -103,7 +103,7 @@ class HistoryView extends LitElement {
     await 0;
     const skipScroll = !this.gameRecordsByDate || !this.expandedPuzzle;
     const atTop =
-      this.gameRecordsByDate?.values().next()?.value[0].puzzleId ===
+      this.gameRecordsByDate?.values().next()?.value?.[0].puzzleId ===
       this.expandedPuzzle;
     const item = this.shadowRoot?.querySelector('game-summary[expanded]');
     const complete =

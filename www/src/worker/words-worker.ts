@@ -59,7 +59,7 @@ function makeGrid(
     const elapsedMs = performance.now() - startTimeMs;
     cache.set(m.seed, cached);
     while (cache.size > MAX_CACHED) {
-      const seed = cache.keys().next().value;
+      const seed = cache.keys().next().value!;
       cache.delete(seed);
     }
     answer = {
