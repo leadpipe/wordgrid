@@ -505,12 +505,12 @@ export class GameView extends LitElement {
 
   private readonly foregroundnessHandler = () => {
     if (document.visibilityState !== 'visible') {
-      this.pauseGame('foregroundness');
+      this.pauseGame(/*auto=*/ true, 'foregroundness');
     }
   };
 
   private readonly windowBlurHandler = () => {
-    this.pauseGame('window blur');
+    this.pauseGame(/*auto=*/ true, 'window blur');
   };
 
   private lastInteraction = new Date();
@@ -524,7 +524,7 @@ export class GameView extends LitElement {
       if (this.gameState?.isPaused) {
         this.resumePlay();
       } else {
-        this.pauseGame('spacebar');
+        this.pauseGame(/*auto=*/ false, 'spacebar');
       }
     }
   };
@@ -678,7 +678,7 @@ export class GameView extends LitElement {
 
   private pausePlay() {
     this.noteInteraction();
-    this.pauseGame('button');
+    this.pauseGame(/*auto=*/ false, 'button');
   }
 
   private async pauseGameAsync(timestamp?: number, update = true) {
@@ -688,7 +688,7 @@ export class GameView extends LitElement {
     logEvent(EventType.ACTION, {category: 'pause'});
   }
 
-  pauseGame(why: string) {
+  pauseGame(auto: boolean, why: string) {
     if (this.gameState?.isPaused || this.classList.contains('pause-changing')) {
       return;
     }
@@ -703,16 +703,21 @@ export class GameView extends LitElement {
       timestamp = this.lastInteraction.getTime();
       logEvent(EventType.ACTION, {category: 'pause-next-day', detail: why});
     }
-    this.gridTransitionQueue.push({
-      className: 'pause-changing',
-      updateGrid: () => {
-        this.pauseGameAsync(timestamp, false);
-        this.gridTransitionQueue.push({
-          className: 'pause-changed',
-          updateGrid: () => {},
-        });
-      },
-    });
+    const updateGrid = () => {
+      this.pauseGameAsync(timestamp, false);
+      this.gridTransitionQueue.push({
+        className: 'pause-changed',
+        updateGrid: () => {},
+      });
+    };
+    if (auto) {
+      updateGrid();
+    } else {
+      this.gridTransitionQueue.push({
+        className: 'pause-changing',
+        updateGrid,
+      });
+    }
     this.runGridTransition();
   }
 

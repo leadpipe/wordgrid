@@ -492,7 +492,7 @@ export class LeadpipeWordgrid extends LitElement {
   }
 
   private pauseGame(why: string) {
-    this.gameView?.pauseGame(why);
+    this.gameView?.pauseGame(/*auto=*/false, why);  // All our pauses are interactive
   }
 
   private handlePlayPuzzle(event: CustomEvent<PuzzleToPlay>) {
