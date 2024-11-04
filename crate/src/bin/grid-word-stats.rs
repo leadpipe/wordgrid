@@ -106,7 +106,7 @@ fn print_histogram(h: (Histogram, &'static PuzzleSize)) {
     println!(
       "{:>3}: {:>4}",
       percentile,
-      h.0.percentile(percentile as f64).unwrap().range().start()
+      h.0.percentile(percentile as f64).unwrap().unwrap().range().start()
     );
   }
   println!();
